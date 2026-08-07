@@ -1,0 +1,68 @@
+# Need help or want support? Join the Discord: https://discord.gg/kEF77QCfu7
+# FoAuction general settings.
+# Text shown to players/admins is in messages.yml.
+# Public inventory GUI layout/text is in guis/*.yml.
+# Message prefix and style color tokens are in messages.yml under tokens.
+
+# File logging works like debug mode and saves plugin activity to logs/latest.log. Default: false
+file-logging: false
+
+# Uses Minecraft's native dialog/input screens for search and text/number input when supported.
+# Requires a compatible Paper or Paper-fork server with the Dialog API.
+# Spigot and older versions automatically fall back to inventory/chat GUI mode.
+# Set this to false to always use inventory/chat GUI mode.
+native-dialogs:
+  enabled: true
+  # Sends admins a short warning when native dialogs are enabled but unavailable and the plugin falls back.
+  warn-on-fallback: true
+
+auction:
+  # Lowest price players can list items for. Supports decimals.
+  min-price: 0.01
+  # Highest price players can list items for.
+  max-price: 999999999999999
+  # Fee percent charged when creating a listing. Example: 2.5 = 2.5%.
+  listing-fee-percent: 0
+  # Default active listing slots when player has no foauction.slots.<amount> permission.
+  default-max-slots: 3
+  # Listings expire after this many days. Valid range: 1-30.
+  expire-days: 7
+
+gui:
+  # Minimum milliseconds between refresh clicks. Set 0 to disable cooldown.
+  refresh-cooldown-millis: 500
+  # If true, sell/buy actions open a confirmation inventory.
+  confirmation-gui-enabled: true
+  # If true, prices display with compact suffixes like 1.50K, 2.00M, 3.00B, 4.00T.
+  compact-price-format: false
+
+blacklisted-items:
+  # Materials players cannot list.
+  material:
+    - BEDROCK
+  # Case-insensitive name fragments players cannot list.
+  name-contains:
+    - banned
+
+discord-webhook:
+  # Sends auction events to Discord when enabled and webhook-url is valid.
+  enabled: false
+  # Discord webhook URL. Leave WEBHOOK_HERE to disable sends safely.
+  webhook-url: "WEBHOOK_HERE"
+  # Webhook display name. Leave blank to use FoAuction.
+  username: ""
+  # Optional webhook avatar image URL.
+  avatar-url: ""
+  # Logs the first webhook send failure until a later send succeeds.
+  log-failures: true
+  # Toggle event categories.
+  selling: true
+  listing: true
+  admin-removing: true
+  claims: true
+  cancelling-listings: true
+  claiming-listings: false
+
+history:
+  # Allow players to open their own sold-history GUI.
+  allow-player-own-view: true

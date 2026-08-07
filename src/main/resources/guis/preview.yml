@@ -1,0 +1,10 @@
+# Container preview GUI. Content slots mirror container contents.
+title: "Previewing"
+items:
+  preview:
+    slot: 4
+  back:
+    slot: 40
+    name: "#ffd966← Back"
+    lore:
+      - "#ffffffClick to return to the previous menu."

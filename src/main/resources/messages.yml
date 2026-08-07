@@ -1,0 +1,101 @@
+# Editable message bodies and tokens.
+# Put {prefix} inside every message that should show the prefix.
+# Change tokens.prefix to edit what {prefix} resolves to.
+# Color tokens support #RRGGBB, <#RRGGBB>, and & color codes.
+
+tokens:
+  prefix: "{theme}FoAuction &8» {muted}"
+  theme: "#03fc88"
+  muted: "#a7b8b0"
+  white: "#ffffff"
+  good: "#3ecf8e"
+  bad: "#ff5d73"
+
+command:
+  usage: "{prefix}Usage: {theme}/{label} [sell <price>|claims|search <text>|view [player]]"
+  only-players-open-gui: "{prefix}{bad}Only players can open auction GUI."
+  only-players-sell: "{prefix}{bad}Only players can sell items."
+  usage-sell: "{prefix}Usage: {theme}/{label} sell <price>"
+  invalid-price: "{prefix}{bad}Invalid price: {muted}{error}"
+  hold-item: "{prefix}{bad}Hold item in main hand first."
+  price-range: "{prefix}{bad}Price must be between {theme}{min}{muted} and {theme}{max}{muted}."
+  listed: "{prefix}{good}Listed item for {theme}{price}{muted}. Slots: {theme}{active}/{max}"
+  need-fee: "{prefix}{bad}Need {theme}{amount}{muted} to cover listing fee."
+  no-slots: "{prefix}{bad}Max active listings reached ({theme}{max}{bad})."
+  blacklisted: "{prefix}{bad}That item is blacklisted."
+  economy-error: "{prefix}{bad}Economy transaction failed."
+  only-players-claims: "{prefix}{bad}Only players can open claims."
+  only-players-search: "{prefix}{bad}Only players can search auctions."
+  usage-search: "{prefix}Usage: {theme}/{label} search <text|clear>"
+  search-cleared: "{prefix}{good}Search cleared."
+  searching: "{prefix}Searching for {theme}{query}{muted}."
+  invalid-search-query: "{prefix}{bad}Invalid search query: {muted}{error}"
+  only-players-view: "{prefix}{bad}Only players can view seller listings."
+  player-not-found: "{prefix}{bad}Could not find player {theme}{player}{bad}."
+  invalid-player-name: "{prefix}{bad}Invalid player name: {muted}{error}"
+  opening-listings: "{prefix}Opening listings for {theme}{player}{muted}."
+
+admin:
+  usage: "{prefix}Usage: {theme}/{label} <version|reload|history <player>|editor>"
+  no-permission: "{prefix}{bad}You do not have permission."
+  reload: "{prefix}{good}Configuration, messages, GUI files, and dialogs reloaded."
+  reload-failed: "{prefix}{bad}Reload failed. Check the server log."
+  command-missing: "{prefix}{bad}Admin command is missing from plugin.yml: {theme}{command}"
+  command-failed: "{prefix}{bad}Command failed. {muted}{error}"
+  only-players-history: "{prefix}{bad}Only players can open auction history."
+  usage-history: "{prefix}Usage: {theme}/{label} history <player>"
+  opening-history: "{prefix}Opening auction history for {theme}{player}{muted}."
+
+dialog:
+  fallback: "{prefix}{bad}Native dialogs are not supported on this server. {muted}Using inventory/chat input mode."
+
+search:
+  prompt: "{prefix}Type a search query in chat. {muted}Type {theme}clear{muted} to clear or {bad}cancel{muted} to cancel."
+
+editor:
+  opened: "{prefix}Opening admin editor."
+  only-players: "{prefix}{bad}Only players can open the editor."
+  prompt: "{prefix}Type {theme}{field}{muted}. Format: {theme}{format}{muted}. Type {bad}cancel{muted} to cancel."
+  prompt-cancelled: "{prefix}{bad}Editor input cancelled."
+  saved: "{prefix}{good}Saved {theme}{setting}{muted}: {theme}{value}"
+  save-failed: "{prefix}{bad}Could not save {theme}{setting}{bad}."
+  invalid-input: "{prefix}{bad}Invalid input: {muted}{error}"
+  cursor-empty: "{prefix}{bad}Put an item on your cursor first."
+  already-exists: "{prefix}{bad}{theme}{value}{bad} already exists."
+  added: "{prefix}{good}Added {theme}{value}{muted}."
+  removed: "{prefix}{good}Removed {theme}{value}{muted}."
+  not-found: "{prefix}{bad}{theme}{value}{bad} no longer exists."
+  search-applied: "{prefix}Search applied: {theme}{query}"
+  search-cleared: "{prefix}{good}Search cleared."
+
+gui:
+  slow-down: "{prefix}{bad}Please slow down."
+  refresh-cooldown: "{prefix}{bad}Refresh cooldown: {muted}{time}ms"
+  own-listing: "{prefix}{bad}This is your listing. {muted}Use Manage Auctions to cancel it."
+  listing-unavailable: "{prefix}{bad}That listing is no longer available."
+  listing-expired: "{prefix}{bad}That listing expired."
+  purchase-inventory: "{prefix}{good}Purchase successful. {muted}Item added to inventory."
+  purchase-claims: "{prefix}{good}Purchase successful. {muted}Inventory full, item sent to claims."
+  purchase-partial-claims: "{prefix}{good}Purchase successful. {muted}Some items fit, rest sent to claims."
+  insufficient-funds: "{prefix}{bad}Not enough money."
+  transaction-progress: "{prefix}{bad}Another player is purchasing this item."
+  search-input-error: "{prefix}{bad}Could not open search input."
+  no-search-filter: "{prefix}No active search filter."
+  claim-item: "{prefix}{good}Item claimed."
+  claim-money: "{prefix}{good}Money claimed."
+  claim-not-found: "{prefix}{bad}Claim no longer exists."
+  claim-economy-error: "{prefix}{bad}Could not claim money. {muted}Economy error."
+  claim-cooldown: "{prefix}{bad}Please wait before claiming again."
+  cancel-returned: "{prefix}{good}Listing canceled. {muted}Item returned."
+  cancel-inventory-full: "{prefix}{bad}Inventory full."
+  cancel-not-owner: "{prefix}{bad}You do not own that listing."
+  admin-remove-seller: "{prefix}{good}Listing removed. {muted}Item sent to seller claims."
+  admin-take-inventory: "{prefix}{good}Listing removed. {muted}Item added to your inventory."
+  admin-take-claims: "{prefix}{good}Listing removed. {muted}Inventory full, item sent to your claims."
+  admin-no-permission: "{prefix}{bad}No admin permission."
+  admin-insufficient-permission: "{prefix}{bad}Missing permission for this admin action."
+
+auction:
+  sold-notification: "{prefix}{good}Sold {theme}{item}{muted} to {theme}{buyer}{muted} for {theme}{price}{muted}. Payout deposited."
+  admin-removed-notification: "{prefix}{bad}Admin removed your listing. {muted}Item sent to claims."
+  expired-notification: "{prefix}Listing expired. Item sent to claims."

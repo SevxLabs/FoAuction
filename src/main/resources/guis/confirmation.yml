@@ -1,0 +1,31 @@
+# Buy/sell confirmation GUI.
+# Placeholders in confirm/cancel lore: {price}, {fee}
+sell-title: "Confirmation"
+buy-title: "Confirmation"
+items:
+  preview:
+    slot: 13
+  cancel:
+    slot: 11
+    material: RED_STAINED_GLASS_PANE
+    name: "{bad}ᴄᴀɴᴄᴇʟ"
+    lore:
+      - "{white}Price: {theme}{price}"
+      - "{white}Fee: {theme}{fee}"
+  confirm:
+    slot: 15
+    material: LIME_STAINED_GLASS_PANE
+    name: "{good}ᴄᴏɴꜰɪʀᴍ"
+    lore:
+      - "{white}Price: {theme}{price}"
+      - "{white}Fee: {theme}{fee}"
+
+# Lore added to the item preview. The item name/lore supplied by the player or listing stays untouched.
+preview-lore:
+  separator: ""
+  sell:
+    - "{white}Selling for: {theme}{price}"
+    - "{white}Listing fee: {theme}{fee}"
+  buy:
+    - "{white}Seller: {theme}{seller}"
+    - "{white}Buying for: {theme}{price}"

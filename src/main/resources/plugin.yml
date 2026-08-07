@@ -1,0 +1,59 @@
+name: FoAuction
+version: '${project.version}'
+main: me.foesio.foAuction.FoAuction
+api-version: '1.21'
+authors: [ Carrotio ]
+description: Auction House
+depend: [Vault]
+softdepend: [PlaceholderAPI]
+commands:
+  auction:
+    description: Main FoAuction command
+    usage: /<command> [sell <price>|claims|search <text>|view [player]]
+    aliases: [foauction, ah]
+    permission: foauction.use
+    permission-message: "&x&0&3&f&c&8&8FoAuction &8» &x&a&7&b&8&b&0You do not have permission."
+  foauctionadmin:
+    description: FoAuction admin command
+    usage: /<command> <version|reload|history <player>|editor>
+    aliases: [auctionadmin]
+    permission: foauction.admin
+    permission-message: "&x&0&3&f&c&8&8FoAuction &8» &x&a&7&b&8&b&0You do not have permission."
+permissions:
+  foauction.use:
+    description: Allows use of FoAuction player commands
+    default: true
+  foauction.admin:
+    description: Allows use of FoAuction admin commands
+    default: op
+    children:
+      foauction.admin.return: true
+      foauction.admin.take: true
+  foauction.admin.return:
+    description: Allows admins to remove a listing and return it to seller claims
+    default: op
+  foauction.admin.take:
+    description: Allows admins to remove a listing and take the item
+    default: op
+  foauction.admin.*:
+    description: Wildcard admin permission
+    default: op
+    children:
+      foauction.admin: true
+      foauction.admin.return: true
+      foauction.admin.take: true
+  foauction.slots.*:
+    description: Wildcard listing slots permission
+    default: false
+  foauction.slots.1:
+    description: Allows 1 active listing
+    default: false
+  foauction.slots.3:
+    description: Allows 3 active listings
+    default: false
+  foauction.slots.5:
+    description: Allows 5 active listings
+    default: false
+  foauction.slots.10:
+    description: Allows 10 active listings
+    default: false

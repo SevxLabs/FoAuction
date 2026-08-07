@@ -1,0 +1,44 @@
+# Claim box GUI. Money claims remain for older data; new sales pay sellers directly.
+title: "Claim Box"
+content-slots: [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34]
+items:
+  previous:
+    slot: 45
+    name: "#ffffff← Previous Page"
+    lore:
+      - "#ffffffPage {page}/{max_page}"
+  back:
+    slot: 49
+    name: "#ffd966← Back"
+    lore:
+      - "#ffffffClick to return to the previous menu."
+  refresh:
+    slot: 48
+    material: MAP
+    name: "{theme}ʀᴇꜰʀᴇꜱʜ"
+    lore:
+      - "{white}Reload claims"
+  next:
+    slot: 53
+    name: "#ffffff→ Next Page"
+    lore:
+      - "#ffffffPage {page}/{max_page}"
+
+# Text appended to claim entries. Names/lore of the claimed item itself stay untouched.
+claim-entry:
+  separator: ""
+  action-separator: ""
+  item:
+    note: "{white}Note: {theme}{note}"
+    created: "{white}Created: {theme}{created}"
+    action: "{white}Click to claim this item"
+  money:
+    name: "{theme}ᴄʟᴀɪᴍ ᴍᴏɴᴇʏ"
+    amount: "{white}Amount: {theme}{amount}"
+    note: "{white}Note: {theme}{note}"
+    created: "{white}Created: {theme}{created}"
+    action: "{white}Click to claim this money"
+  invalid:
+    name: "{bad}ɪɴᴠᴀʟɪᴅ ᴄʟᴀɪᴍ"
+    lore:
+      - "{white}This claim cannot be delivered."
