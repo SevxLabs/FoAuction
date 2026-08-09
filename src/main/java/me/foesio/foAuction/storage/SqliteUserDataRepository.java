@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Level;
-import me.foesio.core.storage.WriteBehindStore;
 
 public final class SqliteUserDataRepository implements IUserDataRepository {
     private record PlayerPreferences(SortMode sortMode, FilterMode filterMode) {}
@@ -45,9 +44,9 @@ public final class SqliteUserDataRepository implements IUserDataRepository {
     private final FoScheduler scheduler;
     private final ConcurrentMap<UUID, PlayerData> cache;
     private final ExecutorService ioExecutor;
+    private final ConcurrentMap<UUID, PlayerData> pendingSaves;
+    private final AtomicBoolean saveDrainScheduled;
     private final AtomicBoolean shuttingDown;
-    private final Object saveLock;
-    private final WriteBehindStore<UUID, PlayerData> writeBehindStore;
 
     public SqliteUserDataRepository(JavaPlugin plugin, DatabaseManager databaseManager, FoScheduler scheduler) {
         this.plugin = plugin;
@@ -59,22 +58,9 @@ public final class SqliteUserDataRepository implements IUserDataRepository {
             thread.setDaemon(true);
             return thread;
         });
+        this.pendingSaves = new ConcurrentHashMap<>();
+        this.saveDrainScheduled = new AtomicBoolean(false);
         this.shuttingDown = new AtomicBoolean(false);
-        this.saveLock = new Object();
-        this.writeBehindStore = WriteBehindStore.create(
-                scheduler,
-                20L,
-                (uuid, unload) -> {
-                    PlayerData data = cache.get(uuid);
-                    return data == null ? null : data.snapshot();
-                },
-                (uuid, snapshot) -> {
-                    synchronized (saveLock) {
-                        savePlayerData(snapshot);
-                    }
-                    return true;
-                }
-        );
     }
 
     public void loadAllFromDisk() {
@@ -151,11 +137,22 @@ public final class SqliteUserDataRepository implements IUserDataRepository {
         if (deferSnapshotToServerThread(() -> saveAsync(uuid))) {
             return;
         }
-        writeBehindStore.snapshotAndWriteAsync(uuid, false);
+        queueSaveSnapshot(uuid);
+    }
+
+    private void queueSaveSnapshot(UUID uuid) {
+        PlayerData data = cache.get(uuid);
+        if (data == null) {
+            return;
+        }
+
+        pendingSaves.put(uuid, data.snapshot());
+        scheduleSaveDrain();
     }
 
     public void saveNow(UUID uuid) {
-        writeBehindStore.flushSynchronously(List.of(uuid), false);
+        queueSaveSnapshot(uuid);
+        awaitPendingIo();
     }
 
     public void saveAllAsync() {
@@ -163,13 +160,17 @@ public final class SqliteUserDataRepository implements IUserDataRepository {
             return;
         }
         for (UUID uuid : cache.keySet()) {
-            writeBehindStore.snapshotAndWriteAsync(uuid, false);
+            queueSaveSnapshot(uuid);
         }
     }
 
     public void shutdownAndFlush() {
         shuttingDown.set(true);
-        writeBehindStore.flushSynchronously(new ArrayList<>(cache.keySet()), false);
+        saveAllAsync();
+        boolean executorDrained = awaitPendingIo();
+        if (executorDrained) {
+            flushPendingSavesOnCurrentThread();
+        }
         ioExecutor.shutdown();
 
         try {
@@ -449,6 +450,66 @@ public final class SqliteUserDataRepository implements IUserDataRepository {
                 SortMode.NEWEST.name(),
                 FilterMode.ALL.name()
             );
+        }
+    }
+
+    private void scheduleSaveDrain() {
+        if (!saveDrainScheduled.compareAndSet(false, true)) {
+            return;
+        }
+
+        try {
+            ioExecutor.execute(this::drainPendingSaves);
+        } catch (RejectedExecutionException exception) {
+            saveDrainScheduled.set(false);
+            flushPendingSavesOnCurrentThread();
+        }
+    }
+
+    private void drainPendingSaves() {
+        try {
+            PlayerData snapshot;
+            while ((snapshot = pollNextPendingSave()) != null) {
+                savePlayerData(snapshot);
+            }
+        } finally {
+            saveDrainScheduled.set(false);
+            if (!pendingSaves.isEmpty() && !shuttingDown.get()) {
+                scheduleSaveDrain();
+            }
+        }
+    }
+
+    private PlayerData pollNextPendingSave() {
+        for (UUID uuid : pendingSaves.keySet()) {
+            PlayerData snapshot = pendingSaves.remove(uuid);
+            if (snapshot != null) {
+                return snapshot;
+            }
+        }
+        return null;
+    }
+
+    private boolean awaitPendingIo() {
+        try {
+            ioExecutor.submit(() -> { }).get();
+            return true;
+        } catch (RejectedExecutionException exception) {
+            return ioExecutor.isTerminated();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (Exception exception) {
+            plugin.getLogger().log(Level.FINE, ColorPalette.log("Failed to flush pending SQLite saves"), exception);
+            FoAuction.fileLogger().error("Failed to flush pending SQLite saves.", exception);
+            return true;
+        }
+    }
+
+    private void flushPendingSavesOnCurrentThread() {
+        PlayerData snapshot;
+        while ((snapshot = pollNextPendingSave()) != null) {
+            savePlayerData(snapshot);
         }
     }
 

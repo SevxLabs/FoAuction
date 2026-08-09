@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>me.foesio</groupId>
     <artifactId>FoAuction</artifactId>
-    <version>2.6</version>
+    <version>2.7</version>
     <packaging>jar</packaging>
     <name>FoAuction</name>
     <properties>
