@@ -16,6 +16,10 @@ import me.foesio.core.gui.GuiButtonConfig;
 import me.foesio.core.gui.GuiButtons;
 import me.foesio.core.gui.GuiSlots;
 import me.foesio.core.gui.GuiTitles;
+import me.foesio.core.gui.EntryBrowserClick;
+import me.foesio.core.gui.EntryBrowserHolder;
+import me.foesio.core.gui.EntryBrowserMenus;
+import me.foesio.core.gui.EntryBrowserRequest;
 import me.foesio.core.material.MaterialChooserActionType;
 import me.foesio.core.material.MaterialChooserClick;
 import me.foesio.core.material.MaterialChooserHolder;
@@ -75,19 +79,8 @@ public final class AdminEditorManager {
     private static final int MAIN_BLACKLIST_SLOT = 13;
     private static final int MAIN_HISTORY_TOGGLE_SLOT = 14;
     private static final int SMALL_BACK_SLOT = 22;
-    private static final int PREVIOUS_SLOT = 45;
-    private static final int LIST_BACK_SLOT = 49;
-    private static final int ADD_TYPED_SLOT = 47;
-    private static final int SEARCH_SLOT = 51;
-    private static final int CLEAR_SEARCH_SLOT = 52;
-    private static final int NEXT_SLOT = 53;
     private static final int CONFIRM_CANCEL_SLOT = 11;
     private static final int CONFIRM_DELETE_SLOT = 15;
-    private static final int[] LIST_CONTENT_SLOTS = {
-            10, 11, 12, 13, 14, 15, 16,
-            19, 20, 21, 22, 23, 24, 25,
-            28, 29, 30, 31, 32, 33, 34
-    };
     private static final String MATERIAL_LIST_PATH = "blacklisted-items.material";
     private static final String NAME_LIST_PATH = "blacklisted-items.name-contains";
     private static final List<CycleOption> BOOLEAN_OPTIONS = List.of(
@@ -232,14 +225,25 @@ public final class AdminEditorManager {
 
     public void openNames(Player player, int requestedPage) {
         List<String> entries = filteredList(configStringList(NAME_LIST_PATH), nameSearches.get(player.getUniqueId()));
-        int page = clampPage(requestedPage, entries.size());
-        AdminEditorHolder holder = holder(player, AdminEditorHolder.Page.NAMES, 54, "Name Blacklist", page, "");
-        Inventory inventory = holder.getInventory();
-        fill(inventory);
-        setEmptyListItem(inventory, entries, "No Names");
-        populateNameEntries(holder, entries, page);
-        addListControls(inventory, page, entries.size(), nameSearches.get(player.getUniqueId()));
-        player.openInventory(inventory);
+        List<EntryBrowserRequest.Entry> browserEntries = entries.stream()
+                .map(value -> EntryBrowserRequest.Entry.of(value, rawNameButton(Material.PAPER, value, List.of(
+                        white("Click to remove")
+                ), ColorPalette.THEME_COLOR, true)))
+                .toList();
+        EntryBrowserMenus.open(player, EntryBrowserRequest.builder()
+                .title("Name Blacklist")
+                .entries(browserEntries)
+                .page(requestedPage)
+                .filter(nameSearches.getOrDefault(player.getUniqueId(), ""))
+                .buttons(buttons)
+                .showBack(true)
+                .addButton(button(Material.ANVIL, "Add Name", List.of(
+                        white("Type blocked name fragment")
+                ), ColorPalette.GOOD_COLOR, true))
+                .emptyItem(button(Material.PAPER, "No Names", List.of(
+                        white("No entries match the current search")
+                ), ColorPalette.LIGHT_GRAY_COLOR, false))
+                .build());
     }
 
     public void openRemoveConfirm(Player player, AdminEditorHolder.Page page, String value, int returnPage) {
@@ -283,7 +287,6 @@ public final class AdminEditorManager {
             case AUCTION -> handleAuctionClick(player, slot);
             case DISCORD -> handleDiscordClick(player, slot);
             case BLACKLIST -> handleBlacklistClick(player, slot);
-            case NAMES -> handleNamesClick(player, holder, slot);
             case CONFIRM_REMOVE_NAME -> handleConfirmRemoveClick(player, holder, slot);
         }
     }
@@ -377,6 +380,28 @@ public final class AdminEditorManager {
             case NONE -> {
             }
             default -> {
+            }
+        }
+    }
+
+    public void handleEntryBrowserClick(Player player, EntryBrowserHolder holder, int slot,
+                                        org.bukkit.event.inventory.ClickType clickType) {
+        EntryBrowserClick click = EntryBrowserMenus.handleClick(slot, holder, clickType);
+        String search = holder.request().filter();
+        switch (click.action()) {
+            case ENTRY -> openRemoveConfirm(player, AdminEditorHolder.Page.CONFIRM_REMOVE_NAME,
+                    click.entryId(), holder.request().page());
+            case ADD -> startPrompt(player, PromptType.ADD_NAME, holder.request().page());
+            case SEARCH -> startPrompt(player, PromptType.SEARCH_NAME, holder.request().page());
+            case CLEAR_SEARCH -> {
+                nameSearches.remove(player.getUniqueId());
+                messages.sendConfigured(player, "editor.search-cleared");
+                openNames(player, 0);
+            }
+            case PREVIOUS_PAGE -> openNames(player, holder.request().page() - 1);
+            case NEXT_PAGE -> openNames(player, holder.request().page() + 1);
+            case BACK -> openBlacklist(player);
+            case NONE -> {
             }
         }
     }
@@ -649,32 +674,6 @@ public final class AdminEditorManager {
         }
     }
 
-    private void handleNamesClick(Player player, AdminEditorHolder holder, int slot) {
-        String value = holder.getValue(slot);
-        if (value != null) {
-            openRemoveConfirm(player, AdminEditorHolder.Page.CONFIRM_REMOVE_NAME, value, holder.getListPage());
-            return;
-        }
-
-        switch (slot) {
-            case PREVIOUS_SLOT -> openNames(player, holder.getListPage() - 1);
-            case NEXT_SLOT -> openNames(player, holder.getListPage() + 1);
-            case LIST_BACK_SLOT -> openBlacklist(player);
-            case ADD_TYPED_SLOT -> startPrompt(player, PromptType.ADD_NAME, holder.getListPage());
-            case SEARCH_SLOT -> startPrompt(player, PromptType.SEARCH_NAME, holder.getListPage());
-            case CLEAR_SEARCH_SLOT -> {
-                if (nameSearches.getOrDefault(player.getUniqueId(), "").isBlank()) {
-                    return;
-                }
-                nameSearches.remove(player.getUniqueId());
-                messages.sendConfigured(player, "editor.search-cleared");
-                openNames(player, 0);
-            }
-            default -> {
-            }
-        }
-    }
-
     private void handleConfirmRemoveClick(Player player, AdminEditorHolder holder, int slot) {
         if (slot == CONFIRM_CANCEL_SLOT) {
             ignoredConfirmationCloses.add(player.getUniqueId());
@@ -924,53 +923,6 @@ public final class AdminEditorManager {
         });
     }
 
-    private void populateNameEntries(AdminEditorHolder holder, List<String> entries, int page) {
-        Inventory inventory = holder.getInventory();
-        ItemStack emptySlot = EditorItemFactory.item(Material.LIGHT_GRAY_STAINED_GLASS_PANE, " ", List.of());
-        int start = page * LIST_CONTENT_SLOTS.length;
-        for (int i = 0; i < LIST_CONTENT_SLOTS.length; i++) {
-            int index = start + i;
-            int slot = LIST_CONTENT_SLOTS[i];
-            if (index >= entries.size()) {
-                inventory.setItem(slot, emptySlot.clone());
-                continue;
-            }
-            String value = entries.get(index);
-            inventory.setItem(slot, rawNameButton(Material.PAPER, value, List.of(
-                    white("Click to remove")
-            ), ColorPalette.THEME_COLOR, true));
-            holder.mapValue(slot, value);
-        }
-    }
-
-    private void addListControls(Inventory inventory, int page, int totalItems, String search) {
-        int maxPage = maxPage(totalItems);
-        if (page > 0) {
-            inventory.setItem(PREVIOUS_SLOT, buttons.previousPage(page, maxPage));
-        }
-        if (page < maxPage) {
-            inventory.setItem(NEXT_SLOT, buttons.nextPage(page, maxPage));
-        }
-        inventory.setItem(LIST_BACK_SLOT, buttons.back());
-        inventory.setItem(ADD_TYPED_SLOT, button(Material.ANVIL, "Add Name", List.of(
-                white("Type blocked name fragment")
-        ), ColorPalette.GOOD_COLOR, true));
-        String normalizedSearch = search == null ? "" : search.trim();
-        inventory.setItem(SEARCH_SLOT, buttons.search(normalizedSearch));
-        if (!normalizedSearch.isBlank()) {
-            inventory.setItem(CLEAR_SEARCH_SLOT, buttons.clearSearch("names"));
-        }
-    }
-
-    private void setEmptyListItem(Inventory inventory, List<String> entries, String label) {
-        if (!entries.isEmpty()) {
-            return;
-        }
-        inventory.setItem(4, button(Material.PAPER, label, List.of(
-                white("No entries match this page")
-        ), ColorPalette.LIGHT_GRAY_COLOR, false));
-    }
-
     private AdminEditorHolder holder(Player player, AdminEditorHolder.Page page, int size, String title) {
         return holder(player, page, size, title, 0, "");
     }
@@ -1043,17 +995,6 @@ public final class AdminEditorManager {
                 .filter(value -> normalizedSearch.isBlank() || value.toLowerCase(Locale.ROOT).contains(normalizedSearch))
                 .sorted(Comparator.comparing(value -> value.toLowerCase(Locale.ROOT)))
                 .toList();
-    }
-
-    private int clampPage(int requestedPage, int totalItems) {
-        return Math.max(0, Math.min(requestedPage, maxPage(totalItems)));
-    }
-
-    private int maxPage(int totalItems) {
-        if (totalItems <= 0) {
-            return 0;
-        }
-        return (totalItems - 1) / LIST_CONTENT_SLOTS.length;
     }
 
     private double parsePrice(String input) throws EditorInputException {

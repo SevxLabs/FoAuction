@@ -2,6 +2,7 @@ package me.foesio.foAuction.listeners;
 
 import me.foesio.core.FoCoreContext;
 import me.foesio.core.editor.EditorMenuHolder;
+import me.foesio.core.gui.EntryBrowserHolder;
 import me.foesio.core.material.MaterialChooserHolder;
 import me.foesio.foAuction.gui.editor.AdminEditorHolder;
 import me.foesio.foAuction.gui.editor.AdminEditorManager;
@@ -41,7 +42,8 @@ public final class AdminEditorListener implements Listener {
         InventoryHolder holder = topInventory.getHolder();
         if (!(holder instanceof AdminEditorHolder)
                 && !(holder instanceof EditorMenuHolder)
-                && !(holder instanceof MaterialChooserHolder)) {
+                && !(holder instanceof MaterialChooserHolder)
+                && !(holder instanceof EntryBrowserHolder)) {
             return;
         }
 
@@ -73,6 +75,8 @@ public final class AdminEditorListener implements Listener {
                 editorManager.handleConfigEditorClick(player, editorMenuHolder, slot);
             } else if (expectedHolder instanceof MaterialChooserHolder materialChooserHolder) {
                 editorManager.handleMaterialChooserClick(player, materialChooserHolder, slot);
+            } else if (expectedHolder instanceof EntryBrowserHolder entryBrowserHolder) {
+                editorManager.handleEntryBrowserClick(player, entryBrowserHolder, slot, event.getClick());
             }
         });
     }
@@ -83,7 +87,8 @@ public final class AdminEditorListener implements Listener {
         InventoryHolder holder = topInventory.getHolder();
         if (!(holder instanceof AdminEditorHolder)
                 && !(holder instanceof EditorMenuHolder)
-                && !(holder instanceof MaterialChooserHolder)) {
+                && !(holder instanceof MaterialChooserHolder)
+                && !(holder instanceof EntryBrowserHolder)) {
             return;
         }
 
