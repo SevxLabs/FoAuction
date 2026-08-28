@@ -8,6 +8,7 @@ import me.foesio.foAuction.utils.FormatUtils;
 import me.foesio.foAuction.utils.InputValidationUtils;
 import me.foesio.foAuction.utils.SoundFeedback;
 import me.foesio.core.message.FoMessageService;
+import me.foesio.core.sound.FoAdminSounds;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -29,23 +30,31 @@ public final class AuctionCommand implements CommandExecutor, TabCompleter {
     private final EconomyService economyService;
     private final AuctionSettings settings;
     private final FoMessageService messages;
+    private final FoAdminSounds adminSounds;
 
     public AuctionCommand(
             AuctionGuiManager guiManager,
             AuctionService auctionService,
             EconomyService economyService,
             AuctionSettings settings,
-            FoMessageService messages
+            FoMessageService messages,
+            FoAdminSounds adminSounds
     ) {
         this.guiManager = guiManager;
         this.auctionService = auctionService;
         this.economyService = economyService;
         this.settings = settings;
         this.messages = messages;
+        this.adminSounds = adminSounds;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!sender.hasPermission("foauction.use")) {
+            messages.sendConfigured(sender, "command.no-permission", "label", label);
+            adminSounds.updateError(sender);
+            return true;
+        }
         if (args.length == 0) {
             if (!(sender instanceof Player player)) {
                 messages.sendConfigured(sender, "command.only-players-open-gui");
@@ -67,6 +76,7 @@ public final class AuctionCommand implements CommandExecutor, TabCompleter {
 
                 if (args.length < 2) {
                     messages.sendConfigured(sender, "command.usage-sell", "label", label);
+                    adminSounds.updateError(sender);
                     return true;
                 }
 
@@ -75,6 +85,7 @@ public final class AuctionCommand implements CommandExecutor, TabCompleter {
                     price = InputValidationUtils.validatePrice(args[1]);
                 } catch (InputValidationUtils.InvalidInputException exception) {
                     messages.sendConfigured(sender, "command.invalid-price", "error", exception.getMessage());
+                    adminSounds.updateError(player);
                     return true;
                 }
 
@@ -83,7 +94,7 @@ public final class AuctionCommand implements CommandExecutor, TabCompleter {
                       ItemStack item = player.getInventory().getItemInMainHand();
                       if (item == null || item.getType().isAir()) {
                           messages.sendConfigured(sender, "command.hold-item");
-                          SoundFeedback.denied(player);
+                          adminSounds.updateError(player);
                           return true;
                       }
 
@@ -95,7 +106,7 @@ public final class AuctionCommand implements CommandExecutor, TabCompleter {
                                   "min", formatDisplayPrice(settings.getMinPrice()),
                                   "max", formatDisplayPrice(settings.getMaxPrice())
                           );
-                          SoundFeedback.denied(player);
+                          adminSounds.updateError(player);
                           return true;
                       }
 
@@ -119,7 +130,7 @@ public final class AuctionCommand implements CommandExecutor, TabCompleter {
                       }
                       case NO_ITEM -> {
                           messages.sendConfigured(sender, "command.hold-item");
-                          SoundFeedback.denied(player);
+                          adminSounds.updateError(player);
                       }
                       case PRICE_OUT_OF_RANGE -> {
                           messages.sendConfigured(
@@ -128,23 +139,23 @@ public final class AuctionCommand implements CommandExecutor, TabCompleter {
                                   "min", formatDisplayPrice(result.minPrice()),
                                   "max", formatDisplayPrice(result.maxPrice())
                           );
-                          SoundFeedback.denied(player);
+                          adminSounds.updateError(player);
                       }
                       case INSUFFICIENT_FUNDS -> {
                           messages.sendConfigured(sender, "command.need-fee", "amount", formatEconomyPrice(result.missingFee()));
-                          SoundFeedback.denied(player);
+                          adminSounds.updateError(player);
                       }
                       case NO_SLOTS -> {
                           messages.sendConfigured(sender, "command.no-slots", "max", String.valueOf(result.maxSlots()));
-                          SoundFeedback.denied(player);
+                          adminSounds.updateError(player);
                       }
                       case BLACKLISTED -> {
                           messages.sendConfigured(sender, "command.blacklisted");
-                          SoundFeedback.denied(player);
+                          adminSounds.updateError(player);
                       }
                       case ECONOMY_ERROR -> {
                           messages.sendConfigured(sender, "command.economy-error");
-                          SoundFeedback.denied(player);
+                          adminSounds.updateError(player);
                       }
                 }
                 return true;
@@ -174,15 +185,16 @@ public final class AuctionCommand implements CommandExecutor, TabCompleter {
                 if (query.isBlank() || "clear".equalsIgnoreCase(query)) {
                     auctionService.clearSearchQuery(player.getUniqueId());
                     messages.sendConfigured(sender, "command.search-cleared");
-                    SoundFeedback.searchCleared(player);
+                    SoundFeedback.clearSearch(player);
                 } else {
                     try {
                         String validatedQuery = InputValidationUtils.validateSearchQuery(query);
                         auctionService.setSearchQuery(player.getUniqueId(), validatedQuery);
                         messages.sendConfigured(sender, "command.searching", "query", validatedQuery);
-                        SoundFeedback.searchUpdated(player);
+                        SoundFeedback.search(player);
                     } catch (InputValidationUtils.InvalidInputException exception) {
                         messages.sendConfigured(sender, "command.invalid-search-query", "error", exception.getMessage());
+                        adminSounds.updateError(player);
                         return true;
                     }
                 }
@@ -202,13 +214,15 @@ public final class AuctionCommand implements CommandExecutor, TabCompleter {
                     try {
                         String validatedPlayerName = InputValidationUtils.validatePlayerName(args[1]);
                           target = findOfflinePlayerByName(validatedPlayerName);
-                          if (target == null) {
-                              messages.sendConfigured(sender, "command.player-not-found", "player", validatedPlayerName);
-                              return true;
-                          }
-                      } catch (InputValidationUtils.InvalidInputException exception) {
-                          messages.sendConfigured(sender, "command.invalid-player-name", "error", exception.getMessage());
+                      if (target == null) {
+                          messages.sendConfigured(sender, "command.player-not-found", "player", validatedPlayerName);
+                          adminSounds.updateError(player);
                           return true;
+                      }
+                  } catch (InputValidationUtils.InvalidInputException exception) {
+                      messages.sendConfigured(sender, "command.invalid-player-name", "error", exception.getMessage());
+                      adminSounds.updateError(player);
+                      return true;
                       }
                   }
 
@@ -220,6 +234,7 @@ public final class AuctionCommand implements CommandExecutor, TabCompleter {
             }
               default -> {
                   messages.sendConfigured(sender, "command.usage", "label", label);
+                  adminSounds.updateError(sender);
                   return true;
               }
         }

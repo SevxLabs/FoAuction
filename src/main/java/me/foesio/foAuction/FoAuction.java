@@ -18,6 +18,11 @@ import me.foesio.core.number.TickDuration;
 import me.foesio.core.placeholder.FoPlaceholders;
 import me.foesio.core.reload.FoReloadRegistry;
 import me.foesio.core.reload.FoReloadResult;
+import me.foesio.core.sound.FoAdminSounds;
+import me.foesio.core.sound.FoEditorSounds;
+import me.foesio.core.sound.FoGuiSounds;
+import me.foesio.core.sound.FoSoundService;
+import me.foesio.core.sound.FoSoundMigrations;
 import me.foesio.core.update.UpdateNoticeService;
 
 import me.foesio.foAuction.commands.AuctionCommand;
@@ -65,6 +70,10 @@ public final class FoAuction extends JavaPlugin {
     private AuctionService auctionService;
     private DiscordWebhookService webhookService;
     private FoCoreContext core;
+    private FoSoundService sounds;
+    private FoAdminSounds adminSounds;
+    private FoEditorSounds editorSounds;
+    private FoGuiSounds guiSounds;
     private UpdateNoticeService updateNotices;
     private PlayerNameCache playerNameCache;
     private AuctionGuiManager guiManager;
@@ -127,6 +136,7 @@ public final class FoAuction extends JavaPlugin {
                 settings,
                 messageService,
                 () -> core,
+                editorSounds,
                 this::afterEditorSettingsReload
         );
 
@@ -200,7 +210,8 @@ public final class FoAuction extends JavaPlugin {
                 auctionService,
                 economyService,
                 settings,
-                messageService
+                messageService,
+                adminSounds
         );
         PluginCommand auctionCommand = Objects.requireNonNull(getCommand("auction"), "auction command missing");
         auctionCommand.setExecutor(auctionCommandExecutor);
@@ -237,7 +248,7 @@ public final class FoAuction extends JavaPlugin {
     }
 
     private UpdateNoticeService createUpdateNotices() {
-        return core.createUpdateNotices(messageService, MODRINTH_PROJECT_ID);
+        return core.createUpdateNotices(messageService, MODRINTH_PROJECT_ID, adminSounds);
     }
 
     private void registerPeriodicSaveTask() {
@@ -301,6 +312,7 @@ public final class FoAuction extends JavaPlugin {
           FoReloadResult result = FoReloadRegistry.create()
                   .add("config", settings::reload)
                   .add("core", this::refreshCoreContext)
+                  .add("sounds", sounds::reload)
                   .addMessages(messageService)
                   .add("guis", guiConfigService::reload)
                   .add("dialogs", dialogTexts::reload)
@@ -325,6 +337,14 @@ public final class FoAuction extends JavaPlugin {
             core.close();
         }
         core = FoPluginCore.create(this);
+        if (sounds == null) {
+            sounds = core.createSounds(soundMigrations());
+            adminSounds = FoAdminSounds.create(sounds);
+            editorSounds = FoEditorSounds.create(sounds);
+            guiSounds = FoGuiSounds.create(sounds);
+            me.foesio.foAuction.utils.SoundFeedback.configure(sounds);
+            me.foesio.foAuction.utils.SoundFeedback.configureGui(guiSounds);
+        }
         metrics = core.metrics(BSTATS_PLUGIN_ID)
                 .togglePie("file_logging", settings::isFileLoggingEnabled)
                 .togglePie("discord_webhook", settings::isDiscordWebhookEnabled)
@@ -342,6 +362,24 @@ public final class FoAuction extends JavaPlugin {
           }
       }
 
+      private FoSoundMigrations soundMigrations() {
+          return FoSoundMigrations.create()
+                  .move("auction.menu-open", "gui.open")
+                  .copy("auction.page-turn", "gui.page-next")
+                  .copy("auction.page-turn", "gui.page-previous")
+                  .remove("auction.page-turn")
+                  .copy("auction.toggle", "gui.sort")
+                  .copy("auction.toggle", "gui.filter")
+                  .remove("auction.toggle")
+                  .move("auction.refresh", "gui.click")
+                  .move("auction.preview-open", "gui.open")
+                  .move("auction.search-updated", "gui.search")
+                  .move("auction.search-cleared", "gui.clear-search")
+                  .move("auction.selling-confirm", "gui.confirm")
+                  .move("auction.denied", "gui.error")
+                  .build();
+      }
+
       private FoAdminCommand createAdminCommand() {
           FoAdminMessages adminMessages = FoAdminMessages.builder()
                   .generalNoPermission("admin.no-permission", "{prefix}{bad}You do not have permission.")
@@ -356,12 +394,10 @@ public final class FoAuction extends JavaPlugin {
                   .commandName("foauctionadmin")
                   .permission("foauction.admin")
                   .adminMessages(adminMessages)
+                  .adminSounds(adminSounds)
                   .addSubcommand(FoAdminSubcommand.builder("version", context -> {
                       fileLogger.info("Admin command version used by " + context.sender().getName() + ".");
                       updateNotices.sendVersion(context.sender());
-                      if (context.playerOrNull() != null) {
-                          me.foesio.foAuction.utils.SoundFeedback.adminInfo(context.playerOrNull());
-                      }
                       return true;
                   }).usage("version").build())
                   .addSubcommand(FoAdminSubcommand.builder("reload", context -> {
@@ -381,7 +417,11 @@ public final class FoAuction extends JavaPlugin {
                           );
                       }
                       if (context.playerOrNull() != null) {
-                          me.foesio.foAuction.utils.SoundFeedback.adminInfo(context.playerOrNull());
+                          if (successful) {
+                              adminSounds.reload(context.playerOrNull());
+                          } else {
+                              adminSounds.reloadError(context.playerOrNull());
+                          }
                       }
                       return true;
                   }).usage("reload").build())
@@ -397,6 +437,7 @@ public final class FoAuction extends JavaPlugin {
                       }
                       if (context.args().length > 1) {
                           messageService.sendConfigured(context.sender(), "admin.usage", "label", context.label());
+                          adminSounds.updateError(context.sender());
                           fileLogger.warn("Admin editor command invalid syntax from " + context.sender().getName() + ".");
                           return true;
                       }
@@ -404,7 +445,7 @@ public final class FoAuction extends JavaPlugin {
                       fileLogger.info("Admin editor opened by " + player.getName() + ".");
                       adminEditorManager.openMain(player);
                       messageService.sendConfigured(player, "editor.opened");
-                      me.foesio.foAuction.utils.SoundFeedback.menuOpen(player);
+                      editorSounds.open(player);
                       return true;
                   }).usage("editor").build())
                   .build();
@@ -419,6 +460,7 @@ public final class FoAuction extends JavaPlugin {
           }
           if (context.args().length < 2) {
               messageService.sendConfigured(context.sender(), "admin.usage-history", "label", context.label());
+              adminSounds.updateError(context.sender());
               fileLogger.warn("Admin history command missing target from " + context.sender().getName() + ".");
               return true;
           }
@@ -430,11 +472,13 @@ public final class FoAuction extends JavaPlugin {
               target = findOfflinePlayerByName(validatedName);
               if (target == null) {
                   messageService.sendConfigured(context.sender(), "command.player-not-found", "player", validatedName);
+                  adminSounds.updateError(context.sender());
                   fileLogger.warn("Admin history target not found: " + validatedName + ".");
                   return true;
               }
           } catch (me.foesio.foAuction.utils.InputValidationUtils.InvalidInputException exception) {
               messageService.sendConfigured(context.sender(), "command.invalid-player-name", "error", exception.getMessage());
+              adminSounds.updateError(context.sender());
               fileLogger.warn("Admin history invalid target from " + context.sender().getName() + ": " + exception.getMessage() + ".");
               return true;
           }

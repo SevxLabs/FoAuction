@@ -1,93 +1,128 @@
 package me.foesio.foAuction.utils;
 
-import me.foesio.core.sound.SoundTypes;
-import org.bukkit.Sound;
+import me.foesio.core.sound.FoSoundService;
+import me.foesio.core.sound.FoGuiSounds;
 import org.bukkit.entity.Player;
 
 public final class SoundFeedback {
+    private static volatile FoSoundService sounds;
+    private static volatile FoGuiSounds guiSounds;
+
     private SoundFeedback() {
     }
 
+    public static void configure(FoSoundService soundService) {
+        sounds = soundService;
+    }
+
+    public static void configureGui(FoGuiSounds guiSoundService) {
+        guiSounds = guiSoundService;
+    }
+
     public static void listingCreated(Player player) {
-        play(player, "ENTITY_EXPERIENCE_ORB_PICKUP", 0.7F, 1.25F);
+        play(player, "auction.listing-created");
     }
 
     public static void menuOpen(Player player) {
-        play(player, "BLOCK_BARREL_OPEN", 0.65F, 1.1F);
+        playGui(player, FoGuiSounds::open);
     }
 
-    public static void pageTurn(Player player) {
-        play(player, "ITEM_BOOK_PAGE_TURN", 0.7F, 1.0F);
+    public static void click(Player player) {
+        playGui(player, FoGuiSounds::click);
     }
 
-    public static void toggle(Player player) {
-        play(player, "UI_BUTTON_CLICK", 0.6F, 1.15F);
+    public static void back(Player player) {
+        playGui(player, FoGuiSounds::back);
     }
 
-    public static void refresh(Player player) {
-        play(player, "BLOCK_BEACON_AMBIENT", 0.55F, 1.35F);
+    public static void nextPage(Player player) {
+        playGui(player, FoGuiSounds::nextPage);
     }
 
-    public static void previewOpen(Player player) {
-        play(player, "BLOCK_SHULKER_BOX_OPEN", 0.7F, 1.0F);
+    public static void previousPage(Player player) {
+        playGui(player, FoGuiSounds::previousPage);
     }
 
-    public static void searchUpdated(Player player) {
-        play(player, "BLOCK_NOTE_BLOCK_PLING", 0.6F, 1.35F);
+    public static void search(Player player) {
+        playGui(player, FoGuiSounds::search);
     }
 
-    public static void searchCleared(Player player) {
-        play(player, "BLOCK_NOTE_BLOCK_PLING", 0.6F, 0.9F);
+    public static void clearSearch(Player player) {
+        playGui(player, FoGuiSounds::clearSearch);
     }
 
-    public static void adminInfo(Player player) {
-        play(player, "BLOCK_AMETHYST_BLOCK_CHIME", 0.7F, 1.1F);
+    public static void sort(Player player) {
+        playGui(player, FoGuiSounds::sort);
+    }
+
+    public static void filter(Player player) {
+        playGui(player, FoGuiSounds::filter);
+    }
+
+    public static void confirm(Player player) {
+        playGui(player, FoGuiSounds::confirm);
+    }
+
+    public static void cancel(Player player) {
+        playGui(player, FoGuiSounds::cancel);
     }
 
     public static void insufficientFunds(Player player) {
-        play(player, "BLOCK_ANVIL_LAND", 0.55F, 1.45F);
+        play(player, "auction.insufficient-funds");
     }
 
     public static void purchaseSuccess(Player player) {
-        play(player, "ENTITY_PLAYER_LEVELUP", 0.6F, 1.45F);
+        play(player, "auction.purchase-success");
     }
 
     public static void listingCancelled(Player player) {
-        play(player, "BLOCK_CHEST_CLOSE", 0.8F, 1.0F);
+        play(player, "auction.listing-cancelled");
     }
 
     public static void claimSuccess(Player player) {
-        play(player, "ENTITY_ITEM_PICKUP", 0.8F, 1.0F);
+        play(player, "auction.claim-success");
     }
 
     public static void expiredClaimSuccess(Player player) {
-        play(player, "BLOCK_AMETHYST_BLOCK_RESONATE", 0.7F, 1.15F);
+        play(player, "auction.expired-claim-success");
     }
 
-    public static void sellingConfirm(Player player) {
-        play(player, "BLOCK_ENCHANTMENT_TABLE_USE", 0.7F, 1.1F);
+    public static void listingExpired(Player player) {
+        play(player, "auction.listing-expired");
+    }
+
+    public static void listingRemoved(Player player) {
+        play(player, "auction.listing-removed");
+    }
+
+    public static void pendingNotifications(Player player) {
+        play(player, "auction.pending-notifications");
     }
 
     public static void adminAction(Player player) {
-        play(player, "ITEM_TRIDENT_RETURN", 0.65F, 1.2F);
+        play(player, "auction.admin-action");
     }
 
     public static void denied(Player player) {
-        play(player, "ENTITY_VILLAGER_NO", 0.75F, 1.0F);
+        playGui(player, FoGuiSounds::error);
     }
 
-    private static void play(Player player, String soundName, float volume, float pitch) {
-        if (player == null || !player.isOnline()) {
-            return;
+    private static void playGui(Player player, GuiSoundAction action) {
+        FoGuiSounds service = guiSounds;
+        if (service != null && player != null && player.isOnline()) {
+            action.play(service, player);
         }
-        Sound sound = sound(soundName);
-        if (sound == null) {
-            return;
-        }
-        player.playSound(player.getLocation(), sound, volume, pitch);
     }
 
-    private static Sound sound(String soundName) {
-        return SoundTypes.resolve(soundName).orElse(null);
+    private static void play(Player player, String path) {
+        FoSoundService service = sounds;
+        if (service != null && player != null && player.isOnline()) {
+            service.play(player, path);
+        }
+    }
+
+    @FunctionalInterface
+    private interface GuiSoundAction {
+        boolean play(FoGuiSounds sounds, Player player);
     }
 }

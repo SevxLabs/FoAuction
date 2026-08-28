@@ -30,12 +30,12 @@ import me.foesio.core.material.MaterialSelections;
 import me.foesio.core.material.MaterialTypes;
 import me.foesio.core.number.LargeNumberParser;
 import me.foesio.core.scheduler.FoScheduler;
+import me.foesio.core.sound.FoEditorSounds;
 import me.foesio.foAuction.config.AuctionSettings;
 import me.foesio.foAuction.FoAuction;
 import me.foesio.foAuction.utils.ColorPalette;
 import me.foesio.foAuction.utils.FormatUtils;
 import me.foesio.foAuction.utils.InputValidationUtils;
-import me.foesio.foAuction.utils.SoundFeedback;
 import me.foesio.core.message.FoMessageService;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
@@ -92,6 +92,7 @@ public final class AdminEditorManager {
     private final AuctionSettings settings;
     private final FoMessageService messages;
     private final Supplier<FoCoreContext> coreProvider;
+    private final FoEditorSounds sounds;
     private final Runnable afterSettingsReload;
     private final Map<UUID, String> materialSearches;
     private final Map<UUID, String> nameSearches;
@@ -105,12 +106,14 @@ public final class AdminEditorManager {
             AuctionSettings settings,
             FoMessageService messages,
             Supplier<FoCoreContext> coreProvider,
+            FoEditorSounds sounds,
             Runnable afterSettingsReload
     ) {
         this.plugin = plugin;
         this.settings = settings;
         this.messages = messages;
         this.coreProvider = coreProvider;
+        this.sounds = sounds;
         this.afterSettingsReload = afterSettingsReload == null ? () -> { } : afterSettingsReload;
         this.materialSearches = new HashMap<>();
         this.nameSearches = new HashMap<>();
@@ -277,7 +280,7 @@ public final class AdminEditorManager {
 
         if (!player.hasPermission("foauction.admin")) {
             messages.sendConfigured(player, "admin.no-permission");
-            SoundFeedback.denied(player);
+            sounds.error(player);
             player.closeInventory();
             return;
         }
@@ -294,7 +297,7 @@ public final class AdminEditorManager {
     public void handleConfigEditorClick(Player player, EditorMenuHolder holder, int slot) {
         if (!player.hasPermission("foauction.admin")) {
             messages.sendConfigured(player, "admin.no-permission");
-            SoundFeedback.denied(player);
+            sounds.error(player);
             player.closeInventory();
             return;
         }
@@ -315,6 +318,7 @@ public final class AdminEditorManager {
         }
         if (button.type() == ConfigEditorValueType.ACTION) {
             if ("back".equals(action)) {
+                sounds.back(player);
                 if ("foauction-discord-events".equals(holder.id())) {
                     openDiscord(player);
                 } else {
@@ -335,18 +339,18 @@ public final class AdminEditorManager {
             messages.sendConfigured(player, "editor.saved",
                     "setting", settingName(result.path()),
                     "value", menu.displayValue(button));
-            SoundFeedback.adminAction(player);
+            sounds.toggle(player, plugin.getConfig().getBoolean(result.path()));
             openConfigMenu(player, holder.id());
         } else {
             messages.sendConfigured(player, "editor.save-failed", "setting", settingName(result.path()));
-            SoundFeedback.denied(player);
+            sounds.error(player);
         }
     }
 
     public void handleMaterialChooserClick(Player player, MaterialChooserHolder holder, int slot) {
         if (!player.hasPermission("foauction.admin")) {
             messages.sendConfigured(player, "admin.no-permission");
-            SoundFeedback.denied(player);
+            sounds.error(player);
             player.closeInventory();
             return;
         }
@@ -354,17 +358,29 @@ public final class AdminEditorManager {
         MaterialChooserClick click = MaterialChooserMenus.handleClick(slot, holder);
         MaterialChooserActionType action = click.action();
         switch (action) {
-            case PREVIOUS_PAGE, NEXT_PAGE -> openMaterialRequest(player, click.nextRequest());
+            case PREVIOUS_PAGE -> {
+                sounds.previousPage(player);
+                openMaterialRequest(player, click.nextRequest());
+            }
+            case NEXT_PAGE -> {
+                sounds.nextPage(player);
+                openMaterialRequest(player, click.nextRequest());
+            }
             case SEARCH -> {
+                sounds.search(player);
                 materialSearches.put(player.getUniqueId(), click.filter());
                 startPrompt(player, PromptType.SEARCH_MATERIAL, click.page());
             }
             case CLEAR_SEARCH -> {
+                sounds.clearSearch(player);
                 materialSearches.remove(player.getUniqueId());
                 messages.sendConfigured(player, "editor.search-cleared");
                 openMaterials(player, 0);
             }
-            case BACK -> openBlacklist(player);
+            case BACK -> {
+                sounds.back(player);
+                openBlacklist(player);
+            }
             case SELECT, TOGGLE -> {
                 Material material = click.material();
                 if (material == null) {
@@ -374,6 +390,7 @@ public final class AdminEditorManager {
                         MaterialSelections.toggled(holder.request().selectedMaterials(), material)
                 );
                 if (saveMaterialSelection(player, nextRequest)) {
+                    sounds.toggle(player, nextRequest.isSelected(material));
                     openMaterialRequest(player, nextRequest);
                 }
             }
@@ -389,18 +406,37 @@ public final class AdminEditorManager {
         EntryBrowserClick click = EntryBrowserMenus.handleClick(slot, holder, clickType);
         String search = holder.request().filter();
         switch (click.action()) {
-            case ENTRY -> openRemoveConfirm(player, AdminEditorHolder.Page.CONFIRM_REMOVE_NAME,
-                    click.entryId(), holder.request().page());
-            case ADD -> startPrompt(player, PromptType.ADD_NAME, holder.request().page());
-            case SEARCH -> startPrompt(player, PromptType.SEARCH_NAME, holder.request().page());
+            case ENTRY -> {
+                openRemoveConfirm(player, AdminEditorHolder.Page.CONFIRM_REMOVE_NAME,
+                        click.entryId(), holder.request().page());
+                sounds.open(player);
+            }
+            case ADD -> {
+                sounds.add(player);
+                startPrompt(player, PromptType.ADD_NAME, holder.request().page());
+            }
+            case SEARCH -> {
+                sounds.search(player);
+                startPrompt(player, PromptType.SEARCH_NAME, holder.request().page());
+            }
             case CLEAR_SEARCH -> {
+                sounds.clearSearch(player);
                 nameSearches.remove(player.getUniqueId());
                 messages.sendConfigured(player, "editor.search-cleared");
                 openNames(player, 0);
             }
-            case PREVIOUS_PAGE -> openNames(player, holder.request().page() - 1);
-            case NEXT_PAGE -> openNames(player, holder.request().page() + 1);
-            case BACK -> openBlacklist(player);
+            case PREVIOUS_PAGE -> {
+                sounds.previousPage(player);
+                openNames(player, holder.request().page() - 1);
+            }
+            case NEXT_PAGE -> {
+                sounds.nextPage(player);
+                openNames(player, holder.request().page() + 1);
+            }
+            case BACK -> {
+                sounds.back(player);
+                openBlacklist(player);
+            }
             case NONE -> {
             }
         }
@@ -596,13 +632,12 @@ public final class AdminEditorManager {
             }
         }
         values.addAll(MaterialSelections.toKeys(selected));
-        if (!saveAndReload(player, MATERIAL_LIST_PATH, values, false)) {
+        if (!saveAndReload(player, MATERIAL_LIST_PATH, values, false, false)) {
             return false;
         }
         messages.sendConfigured(player, "editor.saved",
                 "setting", settingName(MATERIAL_LIST_PATH),
                 "value", values.size() + " entries");
-        SoundFeedback.adminAction(player);
         return true;
     }
 
@@ -624,14 +659,29 @@ public final class AdminEditorManager {
 
     private void handleMainClick(Player player, int slot) {
         switch (slot) {
-            case 10 -> openAuction(player);
-            case 12 -> openGui(player);
-            case MAIN_BLACKLIST_SLOT -> openBlacklist(player);
-            case MAIN_HISTORY_TOGGLE_SLOT -> {
-                saveAndReload(player, "history.allow-player-own-view", !settings.isPlayerOwnHistoryViewAllowed());
-                openMain(player);
+            case 10 -> {
+                openAuction(player);
+                sounds.open(player);
             }
-            case 16 -> openDiscord(player);
+            case 12 -> {
+                openGui(player);
+                sounds.open(player);
+            }
+            case MAIN_BLACKLIST_SLOT -> {
+                openBlacklist(player);
+                sounds.open(player);
+            }
+            case MAIN_HISTORY_TOGGLE_SLOT -> {
+                boolean enabled = !settings.isPlayerOwnHistoryViewAllowed();
+                if (saveAndReload(player, "history.allow-player-own-view", enabled, true, false)) {
+                    sounds.toggle(player, enabled);
+                    openMain(player);
+                }
+            }
+            case 16 -> {
+                openDiscord(player);
+                sounds.open(player);
+            }
             default -> {
             }
         }
@@ -644,7 +694,10 @@ public final class AdminEditorManager {
             case AUCTION_FEE_SLOT -> startPrompt(player, PromptType.LISTING_FEE);
             case AUCTION_SLOTS_SLOT -> startPrompt(player, PromptType.DEFAULT_SLOTS);
             case AUCTION_EXPIRE_SLOT -> startPrompt(player, PromptType.EXPIRE_DAYS);
-            case AUCTION_BACK_SLOT -> openMain(player);
+            case AUCTION_BACK_SLOT -> {
+                sounds.back(player);
+                openMain(player);
+            }
             default -> {
             }
         }
@@ -653,12 +706,21 @@ public final class AdminEditorManager {
     private void handleDiscordClick(Player player, int slot) {
         switch (slot) {
             case DISCORD_ENABLED_SLOT -> {
-                saveAndReload(player, "discord-webhook.enabled", !settings.isDiscordWebhookEnabled());
-                openDiscord(player);
+                boolean enabled = !settings.isDiscordWebhookEnabled();
+                if (saveAndReload(player, "discord-webhook.enabled", enabled, true, false)) {
+                    sounds.toggle(player, enabled);
+                    openDiscord(player);
+                }
             }
             case DISCORD_URL_SLOT -> startPrompt(player, PromptType.WEBHOOK_URL);
-            case DISCORD_EVENTS_SLOT -> openDiscordEvents(player);
-            case DISCORD_BACK_SLOT -> openMain(player);
+            case DISCORD_EVENTS_SLOT -> {
+                openDiscordEvents(player);
+                sounds.open(player);
+            }
+            case DISCORD_BACK_SLOT -> {
+                sounds.back(player);
+                openMain(player);
+            }
             default -> {
             }
         }
@@ -666,9 +728,18 @@ public final class AdminEditorManager {
 
     private void handleBlacklistClick(Player player, int slot) {
         switch (slot) {
-            case 11 -> openMaterials(player, 0);
-            case 15 -> openNames(player, 0);
-            case SMALL_BACK_SLOT -> openMain(player);
+            case 11 -> {
+                openMaterials(player, 0);
+                sounds.open(player);
+            }
+            case 15 -> {
+                openNames(player, 0);
+                sounds.open(player);
+            }
+            case SMALL_BACK_SLOT -> {
+                sounds.back(player);
+                openMain(player);
+            }
             default -> {
             }
         }
@@ -677,6 +748,7 @@ public final class AdminEditorManager {
     private void handleConfirmRemoveClick(Player player, AdminEditorHolder holder, int slot) {
         if (slot == CONFIRM_CANCEL_SLOT) {
             ignoredConfirmationCloses.add(player.getUniqueId());
+            sounds.back(player);
             openNames(player, holder.getListPage());
             return;
         }
@@ -686,8 +758,9 @@ public final class AdminEditorManager {
         }
 
         ignoredConfirmationCloses.add(player.getUniqueId());
-        removeListValue(player, NAME_LIST_PATH, holder.getValue());
-        openNames(player, holder.getListPage());
+        if (removeListValue(player, NAME_LIST_PATH, holder.getValue())) {
+            openNames(player, holder.getListPage());
+        }
     }
 
     private void processPrompt(Player player, PendingPrompt prompt, String input) throws EditorInputException {
@@ -763,6 +836,7 @@ public final class AdminEditorManager {
         List<String> values = configStringList(NAME_LIST_PATH);
         if (containsIgnoreCase(values, value)) {
             messages.sendConfigured(player, "editor.already-exists", "value", value);
+            sounds.error(player);
             FoAuction.fileLogger().warn("Editor name fragment add skipped for " + player.getName() + ": duplicate.");
             openNames(player, returnPage);
             return;
@@ -774,25 +848,30 @@ public final class AdminEditorManager {
         }
     }
 
-    private void removeListValue(Player player, String path, String value) {
+    private boolean removeListValue(Player player, String path, String value) {
         List<String> values = configStringList(path);
         boolean removed = values.removeIf(entry -> entry.equals(value));
         if (!removed) {
             messages.sendConfigured(player, "editor.not-found", "value", value);
-            SoundFeedback.denied(player);
+            sounds.error(player);
             FoAuction.fileLogger().warn("Editor remove failed for " + player.getName() + " at " + path + ": value missing.");
-            return;
+            return false;
         }
 
-        saveList(player, path, values, value, false);
+        return saveList(player, path, values, value, false);
     }
 
     private boolean saveList(Player player, String path, List<String> values, String value, boolean added) {
-        if (!saveAndReload(player, path, values, false)) {
+        if (!saveAndReload(player, path, values, false, false)) {
             return false;
         }
         messages.sendConfigured(player, added ? "editor.added" : "editor.removed", "value", value);
         FoAuction.fileLogger().info("Editor " + (added ? "added" : "removed") + " value at " + path + " by " + player.getName() + ".");
+        if (added) {
+            sounds.add(player);
+        } else {
+            sounds.delete(player);
+        }
         return true;
     }
 
@@ -801,6 +880,10 @@ public final class AdminEditorManager {
     }
 
     private boolean saveAndReload(Player player, String path, Object value, boolean sendFeedback) {
+        return saveAndReload(player, path, value, sendFeedback, true);
+    }
+
+    private boolean saveAndReload(Player player, String path, Object value, boolean sendFeedback, boolean playSaveSound) {
         FileConfiguration config = plugin.getConfig();
         config.set(path, value);
         try {
@@ -811,7 +894,9 @@ public final class AdminEditorManager {
                 messages.sendConfigured(player, "editor.saved", "setting", settingName(path), "value", displayValue(path, value));
             }
             FoAuction.fileLogger().info("Editor saved " + path + " by " + player.getName() + ".");
-            SoundFeedback.adminAction(player);
+            if (playSaveSound) {
+                sounds.save(player);
+            }
             return true;
         } catch (RuntimeException exception) {
             plugin.reloadConfig();
@@ -820,7 +905,7 @@ public final class AdminEditorManager {
             messages.sendConfigured(player, "editor.save-failed", "setting", settingName(path));
             plugin.getLogger().warning(ColorPalette.log("Failed to save editor setting " + path + ": " + exception.getMessage()));
             FoAuction.fileLogger().error("Editor failed to save " + path + " by " + player.getName() + ".", exception);
-            SoundFeedback.denied(player);
+            sounds.error(player);
             return false;
         }
     }
@@ -832,7 +917,7 @@ public final class AdminEditorManager {
     private void startPrompt(Player player, PromptType type, int returnPage) {
         PendingPrompt prompt = new PendingPrompt(type, returnPage);
         FoCoreContext core = coreProvider.get();
-        EditorDialogInputs.openTextFromInventory(
+        boolean openedNative = EditorDialogInputs.openTextFromInventory(
                 plugin,
                 core.inventoryCloseSuppressor(),
                 core.dialogInputs().dialogs(),
@@ -841,9 +926,13 @@ public final class AdminEditorManager {
                 input -> handlePromptInput(player, prompt, input),
                 () -> {
                     messages.sendConfigured(player, "editor.prompt-cancelled");
+                    sounds.back(player);
                     reopenPromptPage(player, prompt);
                 }
         );
+        if (openedNative) {
+            sounds.open(player);
+        }
     }
 
     private TextDialogRequest editorRequest(Player player, PromptType type) {
@@ -882,7 +971,7 @@ public final class AdminEditorManager {
             processPrompt(player, prompt, input.trim());
         } catch (EditorInputException exception) {
             messages.sendConfigured(player, "editor.invalid-input", "error", exception.getMessage());
-            SoundFeedback.denied(player);
+            sounds.error(player);
             FoAuction.fileLogger().warn("Editor invalid input for " + prompt.type().field() + " by " + player.getName() + ": " + exception.getMessage() + ".");
             reopenPromptPage(player, prompt);
         }

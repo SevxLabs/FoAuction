@@ -10,6 +10,7 @@ import me.foesio.foAuction.model.SoldAuctionHistoryEntry;
 import me.foesio.foAuction.model.SortMode;
 import me.foesio.foAuction.storage.IUserDataRepository;
 import me.foesio.foAuction.FoAuction;
+import me.foesio.foAuction.utils.SoundFeedback;
 import me.foesio.foAuction.utils.ColorPalette;
 import me.foesio.foAuction.utils.FormatUtils;
 import me.foesio.core.message.FoMessageService;
@@ -190,6 +191,7 @@ public final class AuctionService {
         for (String notification : playerData.getPendingNotifications()) {
             player.sendMessage(notification);
         }
+        SoundFeedback.pendingNotifications(player);
         playerData.getPendingNotifications().clear();
         userDataRepository.saveAsync(player.getUniqueId());
     }
@@ -699,6 +701,7 @@ public final class AuctionService {
             Player seller = Bukkit.getPlayer(listing.getSellerUuid());
             if (seller != null) {
                 messages.sendConfigured(seller, "auction.admin-removed-notification");
+                SoundFeedback.listingRemoved(seller);
             }
 
             String adminName = admin != null ? admin.getName() : "Unknown";
@@ -941,6 +944,7 @@ public final class AuctionService {
         Player seller = Bukkit.getPlayer(listing.getSellerUuid());
         if (notifyPlayer && seller != null) {
             messages.sendConfigured(seller, "auction.expired-notification");
+            SoundFeedback.listingExpired(seller);
         }
 
         discordWebhookService.send(

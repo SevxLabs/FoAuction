@@ -182,14 +182,14 @@ public final class GuiListener implements Listener {
         UUID listingId = holder.getListingId(slot);
         if (listingId != null) {
             if (isAdminDeleteClick(player, event)) {
-                SoundFeedback.adminAction(player);
+                SoundFeedback.menuOpen(player);
                 runNextTick(() -> guiManager.openAdminRemoveGui(player, listingId, holder.getPage()));
                 return;
             }
             if (event.isRightClick()) {
                 boolean opened = guiManager.openContainerPreviewGui(player, listingId, holder.getPage());
                 if (opened) {
-                    SoundFeedback.previewOpen(player);
+                    SoundFeedback.menuOpen(player);
                     return;
                 }
             }
@@ -220,13 +220,13 @@ public final class GuiListener implements Listener {
         }
 
         if (slot == guiManager.mainPreviousSlot()) {
-            SoundFeedback.pageTurn(player);
+            SoundFeedback.previousPage(player);
             reopenMain(player, holder.getPage() - 1);
             return;
         }
 
         if (slot == guiManager.mainNextSlot()) {
-            SoundFeedback.pageTurn(player);
+            SoundFeedback.nextPage(player);
             reopenMain(player, holder.getPage() + 1);
             return;
         }
@@ -235,21 +235,21 @@ public final class GuiListener implements Listener {
             if (isRefreshOnCooldown(player)) {
                 return;
             }
-            SoundFeedback.refresh(player);
+            SoundFeedback.click(player);
             reopenMain(player, holder.getPage());
             return;
         }
 
         if (slot == guiManager.mainSortSlot()) {
             auctionService.cycleSortMode(player.getUniqueId());
-            SoundFeedback.toggle(player);
+            SoundFeedback.sort(player);
             reopenMain(player, 0);
             return;
         }
 
         if (slot == guiManager.mainFilterSlot()) {
             auctionService.cycleFilterMode(player.getUniqueId());
-            SoundFeedback.toggle(player);
+            SoundFeedback.filter(player);
             reopenMain(player, 0);
             return;
         }
@@ -274,19 +274,24 @@ public final class GuiListener implements Listener {
                         if (query.isBlank()) {
                             auctionService.clearSearchQuery(player.getUniqueId());
                             message(player, "command.search-cleared");
+                            SoundFeedback.clearSearch(player);
                         } else {
                             auctionService.setSearchQuery(player.getUniqueId(), query);
                             message(player, "command.searching", "query", query);
+                            SoundFeedback.search(player);
                         }
                         guiManager.openMainGui(player, 0);
                     },
                     () -> {
                         pendingSearchInputs.remove(player.getUniqueId());
+                        SoundFeedback.cancel(player);
                         guiManager.openMainGui(player, holder.getPage());
                     }
             );
 
-            if (!opened) {
+            if (opened) {
+                SoundFeedback.menuOpen(player);
+            } else {
                 pendingSearchInputs.add(player.getUniqueId());
             }
             return;
@@ -300,12 +305,13 @@ public final class GuiListener implements Listener {
             }
 
             if (auctionService.getSearchQuery(player.getUniqueId()).isBlank()) {
-                  message(player, "gui.no-search-filter");
+                message(player, "gui.no-search-filter");
+                SoundFeedback.denied(player);
                 return;
             }
             auctionService.clearSearchQuery(player.getUniqueId());
-              message(player, "command.search-cleared");
-            SoundFeedback.searchCleared(player);
+            message(player, "command.search-cleared");
+            SoundFeedback.clearSearch(player);
             reopenMain(player, 0);
             return;
         }
@@ -343,13 +349,13 @@ public final class GuiListener implements Listener {
         }
 
         if (slot == guiManager.listingsPreviousSlot()) {
-            SoundFeedback.pageTurn(player);
+            SoundFeedback.previousPage(player);
             runNextTick(() -> guiManager.openMyListingsGui(player, holder.getPage() - 1));
             return;
         }
 
         if (slot == guiManager.listingsNextSlot()) {
-            SoundFeedback.pageTurn(player);
+            SoundFeedback.nextPage(player);
             runNextTick(() -> guiManager.openMyListingsGui(player, holder.getPage() + 1));
             return;
         }
@@ -358,20 +364,20 @@ public final class GuiListener implements Listener {
             if (isRefreshOnCooldown(player)) {
                 return;
             }
-            SoundFeedback.refresh(player);
+            SoundFeedback.click(player);
             runNextTick(() -> guiManager.openMyListingsGui(player, holder.getPage()));
             return;
         }
 
         if (slot == guiManager.listingsSortSlot()) {
             auctionService.cycleSortMode(player.getUniqueId());
-            SoundFeedback.toggle(player);
+            SoundFeedback.sort(player);
             runNextTick(() -> guiManager.openMyListingsGui(player, 0));
             return;
         }
 
         if (slot == guiManager.listingsBackSlot()) {
-            SoundFeedback.menuOpen(player);
+            SoundFeedback.back(player);
             reopenMain(player, 0);
         }
     }
@@ -380,7 +386,7 @@ public final class GuiListener implements Listener {
         UUID listingId = holder.getListingId(slot);
         if (listingId != null) {
             if (isAdminDeleteClick(player, event)) {
-                SoundFeedback.adminAction(player);
+                SoundFeedback.menuOpen(player);
                 runNextTick(() -> guiManager.openAdminRemoveGui(player, listingId, holder.getPage()));
                 return;
             }
@@ -392,7 +398,7 @@ public final class GuiListener implements Listener {
                         holder.getSellerUuid()
                 );
                 if (opened) {
-                    SoundFeedback.previewOpen(player);
+                    SoundFeedback.menuOpen(player);
                     return;
                 }
             }
@@ -422,13 +428,13 @@ public final class GuiListener implements Listener {
         }
 
         if (slot == guiManager.sellerPreviousSlot()) {
-            SoundFeedback.pageTurn(player);
+            SoundFeedback.previousPage(player);
             runNextTick(() -> guiManager.openSellerViewGui(player, holder.getSellerUuid(), holder.getPage() - 1));
             return;
         }
 
         if (slot == guiManager.sellerNextSlot()) {
-            SoundFeedback.pageTurn(player);
+            SoundFeedback.nextPage(player);
             runNextTick(() -> guiManager.openSellerViewGui(player, holder.getSellerUuid(), holder.getPage() + 1));
             return;
         }
@@ -437,20 +443,20 @@ public final class GuiListener implements Listener {
             if (isRefreshOnCooldown(player)) {
                 return;
             }
-            SoundFeedback.refresh(player);
+            SoundFeedback.click(player);
             runNextTick(() -> guiManager.openSellerViewGui(player, holder.getSellerUuid(), holder.getPage()));
             return;
         }
 
         if (slot == guiManager.sellerSortSlot()) {
             auctionService.cycleSortMode(player.getUniqueId());
-            SoundFeedback.toggle(player);
+            SoundFeedback.sort(player);
             runNextTick(() -> guiManager.openSellerViewGui(player, holder.getSellerUuid(), 0));
             return;
         }
 
         if (slot == guiManager.sellerBackSlot()) {
-            SoundFeedback.menuOpen(player);
+            SoundFeedback.back(player);
             reopenMain(player, 0);
         }
     }
@@ -495,13 +501,13 @@ public final class GuiListener implements Listener {
         }
 
         if (slot == guiManager.claimsPreviousSlot()) {
-            SoundFeedback.pageTurn(player);
+            SoundFeedback.previousPage(player);
             runNextTick(() -> guiManager.openClaimsGui(player, holder.getPage() - 1));
             return;
         }
 
         if (slot == guiManager.claimsNextSlot()) {
-            SoundFeedback.pageTurn(player);
+            SoundFeedback.nextPage(player);
             runNextTick(() -> guiManager.openClaimsGui(player, holder.getPage() + 1));
             return;
         }
@@ -510,13 +516,13 @@ public final class GuiListener implements Listener {
             if (isRefreshOnCooldown(player)) {
                 return;
             }
-            SoundFeedback.refresh(player);
+            SoundFeedback.click(player);
             runNextTick(() -> guiManager.openClaimsGui(player, holder.getPage()));
             return;
         }
 
         if (slot == guiManager.claimsBackSlot()) {
-            SoundFeedback.menuOpen(player);
+            SoundFeedback.back(player);
             reopenMain(player, 0);
         }
     }
@@ -536,13 +542,22 @@ public final class GuiListener implements Listener {
                     message(player, "gui.admin-remove-seller");
                     SoundFeedback.adminAction(player);
                 }
-                case NOT_FOUND -> message(player, "gui.listing-unavailable");
+                case NOT_FOUND -> {
+                    message(player, "gui.listing-unavailable");
+                    SoundFeedback.denied(player);
+                }
                 case SUCCESS_ADMIN_INVENTORY, SUCCESS_ADMIN_CLAIMS -> {
                     message(player, "gui.admin-remove-seller");
                     SoundFeedback.adminAction(player);
                 }
-                case NO_PERMISSION -> message(player, "gui.admin-no-permission");
-                case INSUFFICIENT_PERMISSION -> message(player, "gui.admin-insufficient-permission");
+                case NO_PERMISSION -> {
+                    message(player, "gui.admin-no-permission");
+                    SoundFeedback.denied(player);
+                }
+                case INSUFFICIENT_PERMISSION -> {
+                    message(player, "gui.admin-insufficient-permission");
+                    SoundFeedback.denied(player);
+                }
             }
             reopenMain(player, holder.getReturnPage());
             return;
@@ -559,27 +574,36 @@ public final class GuiListener implements Listener {
                     message(player, "gui.admin-take-claims");
                     SoundFeedback.adminAction(player);
                 }
-                case NOT_FOUND -> message(player, "gui.listing-unavailable");
+                case NOT_FOUND -> {
+                    message(player, "gui.listing-unavailable");
+                    SoundFeedback.denied(player);
+                }
                 case SUCCESS_SELLER_CLAIMS -> {
                     message(player, "gui.admin-take-inventory");
                     SoundFeedback.adminAction(player);
                 }
-                case NO_PERMISSION -> message(player, "gui.admin-no-permission");
-                case INSUFFICIENT_PERMISSION -> message(player, "gui.admin-insufficient-permission");
+                case NO_PERMISSION -> {
+                    message(player, "gui.admin-no-permission");
+                    SoundFeedback.denied(player);
+                }
+                case INSUFFICIENT_PERMISSION -> {
+                    message(player, "gui.admin-insufficient-permission");
+                    SoundFeedback.denied(player);
+                }
             }
             reopenMain(player, holder.getReturnPage());
             return;
         }
 
         if (slot == guiManager.adminBackSlot()) {
-            SoundFeedback.menuOpen(player);
+            SoundFeedback.back(player);
             reopenMain(player, holder.getReturnPage());
         }
     }
 
     private void handleContainerPreviewClick(Player player, ContainerPreviewHolder holder, int slot) {
         if (slot == guiManager.previewBackSlot()) {
-            SoundFeedback.menuOpen(player);
+            SoundFeedback.back(player);
             if (holder.getSellerUuid() != null) {
                 runNextTick(() -> guiManager.openSellerViewGui(player, holder.getSellerUuid(), holder.getReturnPage()));
             } else {
@@ -590,7 +614,7 @@ public final class GuiListener implements Listener {
 
     private void handleHistoryClick(Player player, HistoryHolder holder, int slot) {
         if (slot == guiManager.historyPreviousSlot()) {
-            SoundFeedback.pageTurn(player);
+            SoundFeedback.previousPage(player);
             runNextTick(() -> guiManager.openHistoryGui(
                     player,
                     holder.getSellerUuid(),
@@ -601,7 +625,7 @@ public final class GuiListener implements Listener {
         }
 
         if (slot == guiManager.historyNextSlot()) {
-            SoundFeedback.pageTurn(player);
+            SoundFeedback.nextPage(player);
             runNextTick(() -> guiManager.openHistoryGui(
                     player,
                     holder.getSellerUuid(),
@@ -612,7 +636,7 @@ public final class GuiListener implements Listener {
         }
 
         if (slot == guiManager.historyBackSlot()) {
-            SoundFeedback.menuOpen(player);
+            SoundFeedback.back(player);
             reopenMain(player, holder.getReturnPage());
         }
     }
@@ -632,6 +656,7 @@ public final class GuiListener implements Listener {
         Long nextAllowedAt = refreshCooldownExpiryByPlayer.get(playerUuid);
         if (nextAllowedAt != null && nextAllowedAt > now) {
             message(player, "gui.refresh-cooldown", "time", nextAllowedAt - now);
+            SoundFeedback.denied(player);
             return true;
         }
 
@@ -776,7 +801,7 @@ public final class GuiListener implements Listener {
         }
 
         if (slot == guiManager.confirmationCancelSlot()) {
-            SoundFeedback.denied(player);
+            SoundFeedback.cancel(player);
             if (holder.isBuy()) {
                 reopenAfterBuyConfirmation(player, holder);
             } else {
@@ -804,14 +829,14 @@ public final class GuiListener implements Listener {
             return;
         }
 
-        SoundFeedback.sellingConfirm(player);
+        SoundFeedback.confirm(player);
         AuctionService.PurchaseResult result = auctionService.buyListing(player, listingId);
         handlePurchaseResult(player, result);
         reopenAfterBuyConfirmation(player, holder);
     }
 
     private void handleSellConfirmation(Player player, ConfirmationHolder holder) {
-        SoundFeedback.sellingConfirm(player);
+        SoundFeedback.confirm(player);
           ItemStack item = player.getInventory().getItemInMainHand();
           if (item == null || item.getType().isAir()) {
               message(player, "command.hold-item");

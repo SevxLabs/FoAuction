@@ -11,14 +11,10 @@ commands:
     description: Main FoAuction command
     usage: /<command> [sell <price>|claims|search <text>|view [player]]
     aliases: [foauction, ah]
-    permission: foauction.use
-    permission-message: "&x&0&3&f&c&8&8FoAuction &8» &x&a&7&b&8&b&0You do not have permission."
   foauctionadmin:
     description: FoAuction admin command
     usage: /<command> <version|reload|history <player>|editor>
     aliases: [auctionadmin]
-    permission: foauction.admin
-    permission-message: "&x&0&3&f&c&8&8FoAuction &8» &x&a&7&b&8&b&0You do not have permission."
 permissions:
   foauction.use:
     description: Allows use of FoAuction player commands
