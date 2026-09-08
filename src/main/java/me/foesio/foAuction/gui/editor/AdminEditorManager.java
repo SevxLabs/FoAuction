@@ -128,17 +128,17 @@ public final class AdminEditorManager {
         Inventory inventory = holder.getInventory();
         fill(inventory);
 
-        inventory.setItem(10, button(Material.SUNFLOWER, "Auction", List.of(
+        inventory.setItem(10, button(player, Material.SUNFLOWER, "Auction", List.of(
                 white("Prices, slots, fees, expiry")
         ), ColorPalette.THEME_COLOR, true));
-        inventory.setItem(12, button(Material.CHEST, "GUI", List.of(
+        inventory.setItem(12, button(player, Material.CHEST, "GUI", List.of(
                 white("Confirmation and refresh settings")
         ), ColorPalette.THEME_COLOR, true));
-        inventory.setItem(MAIN_BLACKLIST_SLOT, button(Material.BARRIER, "Blacklists", List.of(
+        inventory.setItem(MAIN_BLACKLIST_SLOT, button(player, Material.BARRIER, "Blacklists", List.of(
                 white("Blocked materials and item names")
         ), ColorPalette.THEME_COLOR, true));
-        inventory.setItem(MAIN_HISTORY_TOGGLE_SLOT, toggleButton("Player Own History", settings.isPlayerOwnHistoryViewAllowed()));
-        inventory.setItem(16, button(Material.REDSTONE, "Discord", List.of(
+        inventory.setItem(MAIN_HISTORY_TOGGLE_SLOT, toggleButton(player, "Player Own History", settings.isPlayerOwnHistoryViewAllowed()));
+        inventory.setItem(16, button(player, Material.REDSTONE, "Discord", List.of(
                 white("Webhook and event toggles")
         ), ColorPalette.THEME_COLOR, true));
 
@@ -150,12 +150,12 @@ public final class AdminEditorManager {
         Inventory inventory = holder.getInventory();
         fill(inventory);
 
-        inventory.setItem(AUCTION_MIN_PRICE_SLOT, valueButton(Material.SUNFLOWER, "Minimum Price", formatPrice(settings.getMinPrice()), "Money amount"));
-        inventory.setItem(AUCTION_MAX_PRICE_SLOT, valueButton(Material.EMERALD, "Maximum Price", formatPrice(settings.getMaxPrice()), "Money amount"));
-        inventory.setItem(AUCTION_FEE_SLOT, valueButton(Material.GOLD_INGOT, "Listing Fee", settings.getListingFeePercent() + "%", "Percent 0-100"));
-        inventory.setItem(AUCTION_SLOTS_SLOT, valueButton(Material.CHEST, "Default Slots", String.valueOf(settings.getDefaultMaxSlots()), "Whole number"));
-        inventory.setItem(AUCTION_EXPIRE_SLOT, valueButton(Material.CLOCK, "Expire Days", String.valueOf(settings.getExpireDays()), "1-30 days"));
-        inventory.setItem(AUCTION_BACK_SLOT, GuiButtons.back());
+        inventory.setItem(AUCTION_MIN_PRICE_SLOT, valueButton(player, Material.SUNFLOWER, "Minimum Price", formatPrice(settings.getMinPrice()), "Money amount"));
+        inventory.setItem(AUCTION_MAX_PRICE_SLOT, valueButton(player, Material.EMERALD, "Maximum Price", formatPrice(settings.getMaxPrice()), "Money amount"));
+        inventory.setItem(AUCTION_FEE_SLOT, valueButton(player, Material.GOLD_INGOT, "Listing Fee", settings.getListingFeePercent() + "%", "Percent 0-100"));
+        inventory.setItem(AUCTION_SLOTS_SLOT, valueButton(player, Material.CHEST, "Default Slots", String.valueOf(settings.getDefaultMaxSlots()), "Whole number"));
+        inventory.setItem(AUCTION_EXPIRE_SLOT, valueButton(player, Material.CLOCK, "Expire Days", String.valueOf(settings.getExpireDays()), "1-30 days"));
+        inventory.setItem(AUCTION_BACK_SLOT, GuiButtons.back(player));
 
         player.openInventory(inventory);
     }
@@ -173,17 +173,17 @@ public final class AdminEditorManager {
         Inventory inventory = holder.getInventory();
         fill(inventory);
 
-        inventory.setItem(DISCORD_ENABLED_SLOT, EditorItemFactory.toggle("Discord Webhook", settings.isDiscordWebhookEnabled()));
-        inventory.setItem(DISCORD_URL_SLOT, valueButton(
+        inventory.setItem(DISCORD_ENABLED_SLOT, EditorItemFactory.toggle(player, "Discord Webhook", settings.isDiscordWebhookEnabled()));
+        inventory.setItem(DISCORD_URL_SLOT, valueButton(player,
                 Material.OAK_SIGN,
                 "Webhook URL",
                 summarizeWebhook(settings.getDiscordWebhookUrl()),
                 "https://discord.com/api/webhooks/..."
         ));
-        inventory.setItem(DISCORD_EVENTS_SLOT, button(Material.REPEATER, "Event Toggles", List.of(
+        inventory.setItem(DISCORD_EVENTS_SLOT, button(player, Material.REPEATER, "Event Toggles", List.of(
                 white("Open webhook event settings")
         ), ColorPalette.THEME_COLOR, true));
-        inventory.setItem(DISCORD_BACK_SLOT, GuiButtons.back());
+        inventory.setItem(DISCORD_BACK_SLOT, GuiButtons.back(player));
 
         player.openInventory(inventory);
     }
@@ -197,13 +197,13 @@ public final class AdminEditorManager {
         Inventory inventory = holder.getInventory();
         fill(inventory);
 
-        inventory.setItem(11, button(Material.BEDROCK, "Material Blacklist", List.of(
+        inventory.setItem(11, button(player, Material.BEDROCK, "Material Blacklist", List.of(
                 white("Block item types from listings")
         ), ColorPalette.THEME_COLOR, true));
-        inventory.setItem(15, button(Material.NAME_TAG, "Name Blacklist", List.of(
+        inventory.setItem(15, button(player, Material.NAME_TAG, "Name Blacklist", List.of(
                 white("Block display-name fragments")
         ), ColorPalette.THEME_COLOR, true));
-        inventory.setItem(SMALL_BACK_SLOT, GuiButtons.back());
+        inventory.setItem(SMALL_BACK_SLOT, GuiButtons.back(player));
 
         player.openInventory(inventory);
     }
@@ -229,7 +229,7 @@ public final class AdminEditorManager {
     public void openNames(Player player, int requestedPage) {
         List<String> entries = filteredList(configStringList(NAME_LIST_PATH), nameSearches.get(player.getUniqueId()));
         List<EntryBrowserRequest.Entry> browserEntries = entries.stream()
-                .map(value -> EntryBrowserRequest.Entry.of(value, rawNameButton(Material.PAPER, value, List.of(
+                .map(value -> EntryBrowserRequest.Entry.of(value, button(player, Material.PAPER, value, List.of(
                         white("Click to remove")
                 ), ColorPalette.THEME_COLOR, true)))
                 .toList();
@@ -240,10 +240,10 @@ public final class AdminEditorManager {
                 .filter(nameSearches.getOrDefault(player.getUniqueId(), ""))
                 .buttons(buttons)
                 .showBack(true)
-                .addButton(button(Material.ANVIL, "Add Name", List.of(
+                .addButton(button(player, Material.ANVIL, "Add Name", List.of(
                         white("Type blocked name fragment")
                 ), ColorPalette.GOOD_COLOR, true))
-                .emptyItem(button(Material.PAPER, "No Names", List.of(
+                .emptyItem(button(player, Material.PAPER, "No Names", List.of(
                         white("No entries match the current search")
                 ), ColorPalette.LIGHT_GRAY_COLOR, false))
                 .build());
@@ -253,10 +253,10 @@ public final class AdminEditorManager {
         AdminEditorHolder holder = holder(player, page, 27, "Confirm Delete", returnPage, value);
         Inventory inventory = holder.getInventory();
         fill(inventory);
-        inventory.setItem(CONFIRM_CANCEL_SLOT, button(Material.BARRIER, "Cancel", List.of(
+        inventory.setItem(CONFIRM_CANCEL_SLOT, button(player, Material.RED_WOOL, "Cancel", List.of(
                 white("Return to blacklist")
         ), ColorPalette.BAD_COLOR, false));
-        inventory.setItem(CONFIRM_DELETE_SLOT, button(Material.LAVA_BUCKET, "Confirm Delete", List.of(
+        inventory.setItem(CONFIRM_DELETE_SLOT, button(player, Material.LAVA_BUCKET, "Confirm Delete", List.of(
                 white("Remove: ") + ColorPalette.THEME_COLOR + value
         ), ColorPalette.BAD_COLOR, true));
         player.openInventory(inventory);
@@ -449,7 +449,8 @@ public final class AdminEditorManager {
         }
         Inventory inventory = menu.open(player);
         int rows = inventory.getSize() / GuiSlots.ROW_SIZE;
-        inventory.setItem(GuiSlots.bottomMiddleSlot(rows), GuiButtons.back());
+        inventory.setItem(GuiSlots.bottomMiddleSlot(rows), GuiButtons.back(player));
+        player.openInventory(inventory);
     }
 
     private ConfigEditorMenu configMenu(String id) {
@@ -592,7 +593,7 @@ public final class AdminEditorManager {
             return;
         }
         materialSearches.put(player.getUniqueId(), request.filter());
-        Inventory inventory = MaterialChooserMenus.createInventory(request);
+        Inventory inventory = MaterialChooserMenus.createInventory(player, request);
         if (inventory.getHolder() instanceof MaterialChooserHolder holder) {
             for (Map.Entry<Integer, Material> entry : holder.materialsBySlot().entrySet()) {
                 ItemStack item = inventory.getItem(entry.getKey());
@@ -1027,30 +1028,30 @@ public final class AdminEditorManager {
         );
     }
 
-    private ItemStack valueButton(Material material, String name, String value, String format) {
-        return button(material, name, List.of(
+    private ItemStack valueButton(Player player, Material material, String name, String value, String format) {
+        return button(player, material, name, List.of(
                 white("Current: ") + ColorPalette.THEME_COLOR + value,
                 white("Format: ") + ColorPalette.THEME_COLOR + format,
                 white("Click to edit")
         ), ColorPalette.THEME_COLOR, true);
     }
 
-    private ItemStack toggleButton(String name, boolean enabled) {
-        return button(
+    private ItemStack toggleButton(Player player, String name, boolean enabled) {
+        return EditorItemFactory.button(player,
                 enabled ? Material.LIME_DYE : Material.RED_DYE,
+                (enabled ? ColorPalette.GOOD_COLOR : ColorPalette.BAD_COLOR).toString(),
                 name,
-                CycleOptions.lore(messages, Boolean.toString(enabled), BOOLEAN_OPTIONS),
-                enabled ? ColorPalette.GOOD_COLOR : ColorPalette.BAD_COLOR,
-                true
+                CycleOptions.information(messages, Boolean.toString(enabled), BOOLEAN_OPTIONS),
+                "toggle " + name.toLowerCase(Locale.ROOT)
         );
     }
 
-    private ItemStack button(Material material, String label, List<String> lore, ChatColor nameColor, boolean glow) {
-        return EditorItemFactory.item(material, nameColor + GuiTitles.smallCaps(label), lore);
+    private ItemStack button(Player player, Material material, String label, List<String> lore, ChatColor nameColor, boolean glow) {
+        return EditorItemFactory.button(player, material, nameColor.toString(), label, lore, "edit " + label.toLowerCase(Locale.ROOT));
     }
 
-    private ItemStack rawNameButton(Material material, String label, List<String> lore, ChatColor nameColor, boolean glow) {
-        return EditorItemFactory.item(material, nameColor + label, lore);
+    private ItemStack rawNameButton(Player player, Material material, String label, List<String> lore, ChatColor nameColor, boolean glow) {
+        return EditorItemFactory.button(player, material, nameColor.toString(), label, lore, "remove " + label.toLowerCase(Locale.ROOT));
     }
 
     private void fill(Inventory inventory) {

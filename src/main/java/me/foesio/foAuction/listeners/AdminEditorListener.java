@@ -13,6 +13,7 @@ import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -63,9 +64,10 @@ public final class AdminEditorListener implements Listener {
         event.setCancelled(true);
         int slot = event.getRawSlot();
         ItemStack cursor = event.getCursor() == null ? null : event.getCursor().clone();
+        ClickType clickType = event.getClick();
         InventoryHolder expectedHolder = holder;
         FoCoreContext core = coreProvider.get();
-        core.scheduler().runForPlayer(player, () -> {
+        Runnable clickHandler = () -> {
             if (player.getOpenInventory().getTopInventory().getHolder() != expectedHolder) {
                 return;
             }
@@ -76,9 +78,14 @@ public final class AdminEditorListener implements Listener {
             } else if (expectedHolder instanceof MaterialChooserHolder materialChooserHolder) {
                 editorManager.handleMaterialChooserClick(player, materialChooserHolder, slot);
             } else if (expectedHolder instanceof EntryBrowserHolder entryBrowserHolder) {
-                editorManager.handleEntryBrowserClick(player, entryBrowserHolder, slot, event.getClick());
+                editorManager.handleEntryBrowserClick(player, entryBrowserHolder, slot, clickType);
             }
-        });
+        };
+        if (core == null || !core.scheduler().isFolia()) {
+            clickHandler.run();
+        } else {
+            core.scheduler().runForPlayer(player, clickHandler);
+        }
     }
 
     @EventHandler

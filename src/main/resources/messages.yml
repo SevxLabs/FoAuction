@@ -1,10 +1,12 @@
+# Edit optional item icons here. Remove any :icon: token to hide it.
+# Unsupported servers, older Java clients, and Bedrock players automatically receive clean text without item sprites.
 # Editable message bodies and tokens.
 # Put {prefix} inside every message that should show the prefix.
 # Change tokens.prefix to edit what {prefix} resolves to.
 # Color tokens support #RRGGBB, <#RRGGBB>, and & color codes.
 
 tokens:
-  prefix: "{theme}FoAuction &8» {muted}"
+  prefix: ":diamond: {theme}FoAuction &8» {muted}"
   theme: "#03fc88"
   muted: "#a7b8b0"
   white: "#ffffff"
@@ -12,14 +14,15 @@ tokens:
   bad: "#ff5d73"
 
 command:
+  no-permission: "{prefix}{bad}You do not have permission."
   usage: "{prefix}Usage: {theme}/{label} [sell <price>|claims|search <text>|view [player]]"
   only-players-open-gui: "{prefix}{bad}Only players can open auction GUI."
   only-players-sell: "{prefix}{bad}Only players can sell items."
   usage-sell: "{prefix}Usage: {theme}/{label} sell <price>"
-  invalid-price: "{prefix}{bad}Invalid price: {muted}{error}"
+  invalid-price: "{prefix}:redstone: {bad}Invalid price: {muted}{error}"
   hold-item: "{prefix}{bad}Hold item in main hand first."
   price-range: "{prefix}{bad}Price must be between {theme}{min}{muted} and {theme}{max}{muted}."
-  listed: "{prefix}{good}Listed item for {theme}{price}{muted}. Slots: {theme}{active}/{max}"
+  listed: "{prefix}:emerald: {good}Listed item for {theme}{price}{muted}. Slots: {theme}{active}/{max}"
   need-fee: "{prefix}{bad}Need {theme}{amount}{muted} to cover listing fee."
   no-slots: "{prefix}{bad}Max active listings reached ({theme}{max}{bad})."
   blacklisted: "{prefix}{bad}That item is blacklisted."
@@ -38,8 +41,8 @@ command:
 admin:
   usage: "{prefix}Usage: {theme}/{label} <version|reload|history <player>|editor>"
   no-permission: "{prefix}{bad}You do not have permission."
-  reload: "{prefix}{good}Configuration, messages, GUI files, and dialogs reloaded."
-  reload-failed: "{prefix}{bad}Reload failed. Check the server log."
+  reload: "{prefix}:emerald: {good}Configuration, messages, GUI files, and dialogs reloaded."
+  reload-failed: "{prefix}:redstone: {bad}Reload failed. Check the server log."
   command-missing: "{prefix}{bad}Admin command is missing from plugin.yml: {theme}{command}"
   command-failed: "{prefix}{bad}Command failed. {muted}{error}"
   only-players-history: "{prefix}{bad}Only players can open auction history."
@@ -53,12 +56,12 @@ search:
   prompt: "{prefix}Type a search query in chat. {muted}Type {theme}clear{muted} to clear or {bad}cancel{muted} to cancel."
 
 editor:
-  opened: "{prefix}Opening admin editor."
+  opened: "{prefix}:book: Opening admin editor."
   only-players: "{prefix}{bad}Only players can open the editor."
   prompt: "{prefix}Type {theme}{field}{muted}. Format: {theme}{format}{muted}. Type {bad}cancel{muted} to cancel."
   prompt-cancelled: "{prefix}{bad}Editor input cancelled."
-  saved: "{prefix}{good}Saved {theme}{setting}{muted}: {theme}{value}"
-  save-failed: "{prefix}{bad}Could not save {theme}{setting}{bad}."
+  saved: "{prefix}:emerald: {good}Saved {theme}{setting}{muted}: {theme}{value}"
+  save-failed: "{prefix}:redstone: {bad}Could not save {theme}{setting}{bad}."
   invalid-input: "{prefix}{bad}Invalid input: {muted}{error}"
   cursor-empty: "{prefix}{bad}Put an item on your cursor first."
   already-exists: "{prefix}{bad}{theme}{value}{bad} already exists."
@@ -74,10 +77,10 @@ gui:
   own-listing: "{prefix}{bad}This is your listing. {muted}Use Manage Auctions to cancel it."
   listing-unavailable: "{prefix}{bad}That listing is no longer available."
   listing-expired: "{prefix}{bad}That listing expired."
-  purchase-inventory: "{prefix}{good}Purchase successful. {muted}Item added to inventory."
+  purchase-inventory: "{prefix}:emerald: {good}Purchase successful. {muted}Item added to inventory."
   purchase-claims: "{prefix}{good}Purchase successful. {muted}Inventory full, item sent to claims."
   purchase-partial-claims: "{prefix}{good}Purchase successful. {muted}Some items fit, rest sent to claims."
-  insufficient-funds: "{prefix}{bad}Not enough money."
+  insufficient-funds: "{prefix}:redstone: {bad}Not enough money."
   transaction-progress: "{prefix}{bad}Another player is purchasing this item."
   search-input-error: "{prefix}{bad}Could not open search input."
   no-search-filter: "{prefix}No active search filter."

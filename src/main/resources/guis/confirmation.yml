@@ -1,24 +1,34 @@
 # Buy/sell confirmation GUI.
 # Placeholders in confirm/cancel lore: {price}, {fee}
-sell-title: "Confirmation"
-buy-title: "Confirmation"
+sell-title: "ᴄᴏɴꜰɪʀᴍᴀᴛɪᴏɴ"
+buy-title: "ᴄᴏɴꜰɪʀᴍᴀᴛɪᴏɴ"
 items:
   preview:
     slot: 13
   cancel:
     slot: 11
     material: RED_STAINED_GLASS_PANE
-    name: "{bad}ᴄᴀɴᴄᴇʟ"
+    name: ":red_stained_glass_pane: {bad}&lCANCEL"
     lore:
-      - "{white}Price: {theme}{price}"
-      - "{white}Fee: {theme}{fee}"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fPrice: {theme}{price}"
+      - "&7&l | &fFee: {theme}{fee}"
+      - " "
+      - "{good}→ Click to Cancel ←"
   confirm:
     slot: 15
     material: LIME_STAINED_GLASS_PANE
-    name: "{good}ᴄᴏɴꜰɪʀᴍ"
+    name: ":lime_stained_glass_pane: {good}&lCONFIRM"
     lore:
-      - "{white}Price: {theme}{price}"
-      - "{white}Fee: {theme}{fee}"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fPrice: {theme}{price}"
+      - "&7&l | &fFee: {theme}{fee}"
+      - " "
+      - "{good}→ Click to Confirm Purchase ←"
 
 # Lore added to the item preview. The item name/lore supplied by the player or listing stays untouched.
 preview-lore:

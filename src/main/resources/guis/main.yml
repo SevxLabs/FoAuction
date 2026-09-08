@@ -1,5 +1,5 @@
 # Main auction browser GUI. Slots are 0-based Minecraft inventory slots.
-title: "Auction House"
+title: "ᴀᴜᴄᴛɪᴏɴ ʜᴏᴜꜱᴇ"
 content-slots: [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34]
 
 # Lore added under every auction item in the main listing view.
@@ -25,19 +25,29 @@ items:
   previous:
     slot: 45
     # Optional public-GUI text override. Defaults match FoPluginCore.
-    name: "#ffffff← Previous Page"
+    name: ":arrow: {theme}&lPREVIOUS PAGE"
     lore:
-      - "#ffffffPage {page}/{max_page}"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fPage {page}/{max_page}."
+      - " "
+      - "{good}→ Click to Previous Page ←"
   claims:
     slot: 46
     material: CHEST
-    name: "{theme}ᴄʟᴀɪᴍꜱ"
+    name: ":chest: {theme}&lCLAIMS"
     lore:
-      - "{white}Open your claim box"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fOpen your claim box."
+      - " "
+      - "{good}→ Click to View Claims ←"
   sort:
     slot: 47
     material: HOPPER
-    name: "{theme}ꜱᴏʀᴛ"
+    name: ":hopper: {theme}&lSORT"
     # Labels only. FoPluginCore keeps the colors and selection markers fixed.
     lore-options:
       - "Highest Price"
@@ -47,7 +57,7 @@ items:
   filter:
     slot: 48
     material: REDSTONE
-    name: "{theme}ꜰɪʟᴛᴇʀ"
+    name: ":redstone: {theme}&lFILTER"
     # Labels only. FoPluginCore keeps the colors and selection markers fixed.
     lore-options:
       - "All"
@@ -63,38 +73,67 @@ items:
   refresh:
     slot: 49
     material: MAP
-    name: "{theme}ʀᴇꜰʀᴇꜱʜ"
+    name: ":map: {theme}&lREFRESH"
     lore:
-      - "{white}Reload listings"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fRefresh the auction listings."
+      - " "
+      - "{good}→ Click to Refresh ←"
   manage:
     slot: 50
     material: CHEST
-    name: "{theme}ᴍᴀɴᴀɢᴇ ᴀᴜᴄᴛɪᴏɴꜱ"
+    name: ":chest: {theme}&lMANAGE AUCTIONS"
     lore:
-      - "{white}View all your active auctions"
-      - "{white}Click any listing to cancel"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fView your active auctions."
+      - "&7&l | &fCancel any of your listings."
+      - " "
+      - "{good}→ Click to Manage Auctions ←"
   search:
     slot: 51
     # Optional public-GUI text override. Defaults match FoPluginCore.
-    name: "#ffd966🔍 Search"
+    name: ":name_tag: {theme}&lSEARCH"
     lore:
-      - "#ffffffCurrent: {current}"
-      - "#ffffffClick to set filter."
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fCurrent: {current}"
+      - " "
+      - "{good}→ Click to Search ←"
   history-or-clear:
     slot: 52
   history:
     # Used when history viewing is enabled.
-    name: "{theme}ʜɪꜱᴛᴏʀʏ"
+    name: ":writable_book: {theme}&lHISTORY"
     lore:
-      - "{white}Click to see your history of sold auctions"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fView your sold auction history."
+      - " "
+      - "{good}→ Click to View History ←"
   clear-search:
     # Used when history viewing is disabled. Defaults match FoPluginCore.
-    name: "#5ec8ffClear Search"
+    name: ":milk_bucket: {theme}&lCLEAR SEARCH"
     lore:
-      - "#ffffffShow all {target}."
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fShow all {target}."
+      - " "
+      - "{good}→ Click to Clear Search ←"
   next:
     slot: 53
     # Optional public-GUI text override. Defaults match FoPluginCore.
-    name: "#ffffff→ Next Page"
+    name: ":arrow: {theme}&lNEXT PAGE"
     lore:
-      - "#ffffffPage {page}/{max_page}"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fPage {page}/{max_page}."
+      - " "
+      - "{good}→ Click to Next Page ←"

@@ -94,6 +94,7 @@ public final class FoAuction extends JavaPlugin {
         fileLogger.configure(settings.isFileLoggingEnabled(), true);
         messageService = FoMessageService.load(this, messageMigrations());
         refreshCoreContext();
+        migrateSprites();
         guiConfigService = new GuiConfigService(this, messageService);
         dialogTexts = createDialogTexts();
         dialogTexts.load();
@@ -395,11 +396,7 @@ public final class FoAuction extends JavaPlugin {
                   .permission("foauction.admin")
                   .adminMessages(adminMessages)
                   .adminSounds(adminSounds)
-                  .addSubcommand(FoAdminSubcommand.builder("version", context -> {
-                      fileLogger.info("Admin command version used by " + context.sender().getName() + ".");
-                      updateNotices.sendVersion(context.sender());
-                      return true;
-                  }).usage("version").build())
+                  .updates(updateNotices)
                   .addSubcommand(FoAdminSubcommand.builder("reload", context -> {
                       fileLogger.info("Admin command reload used by " + context.sender().getName() + ".");
                       boolean successful = reloadPluginConfig();
@@ -524,6 +521,23 @@ public final class FoAuction extends JavaPlugin {
                 )
                 .add(config -> backfillEditorMessageDefaults(config))
                 .build();
+      }
+
+      private void migrateSprites() {
+          messageService.migrateToVersion(core.migrations(), 1, config -> {
+              boolean changed = false;
+              changed |= FoMessageService.addMissingToken(config, "tokens.prefix", ":diamond:", null);
+              changed |= FoMessageService.addMissingToken(config, "command.listed", ":emerald:");
+              changed |= FoMessageService.addMissingToken(config, "command.invalid-price", ":redstone:");
+              changed |= FoMessageService.addMissingToken(config, "admin.reload", ":emerald:");
+              changed |= FoMessageService.addMissingToken(config, "admin.reload-failed", ":redstone:");
+              changed |= FoMessageService.addMissingToken(config, "editor.opened", ":book:");
+              changed |= FoMessageService.addMissingToken(config, "editor.saved", ":emerald:");
+              changed |= FoMessageService.addMissingToken(config, "editor.save-failed", ":redstone:");
+              changed |= FoMessageService.addMissingToken(config, "gui.purchase-inventory", ":emerald:");
+              changed |= FoMessageService.addMissingToken(config, "gui.insufficient-funds", ":redstone:");
+              return true;
+          });
       }
 
       private boolean backfillEditorMessageDefaults(FileConfiguration config) {

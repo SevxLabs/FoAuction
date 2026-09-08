@@ -1,11 +1,13 @@
 package me.foesio.foAuction.gui;
 
+import me.foesio.core.dialog.DialogIcons;
 import me.foesio.core.editor.EditorItemFactory;
 import me.foesio.core.editor.CycleOption;
 import me.foesio.core.editor.CycleOptions;
 import me.foesio.core.gui.GuiButtonConfig;
 import me.foesio.core.gui.GuiSlots;
 import me.foesio.core.gui.GuiTitles;
+import me.foesio.core.gui.FoButtonStyle;
 import me.foesio.core.message.FoMessageService;
 import me.foesio.foAuction.config.AuctionSettings;
 import me.foesio.foAuction.gui.holder.AdminRemoveHolder;
@@ -168,7 +170,7 @@ public final class AuctionGuiManager {
         AuctionMainHolder holder = new AuctionMainHolder(
                 player.getUniqueId(),
                 page,
-                  title("main.yml", "title", MAIN_GUI_TITLE)
+                  title(player, "main.yml", "title", MAIN_GUI_TITLE)
           );
         Inventory inventory = holder.getInventory();
 
@@ -176,6 +178,7 @@ public final class AuctionGuiManager {
         decorateFrame(inventory, frameMaterial);
         fillRow(inventory, 4, frameMaterial);
         populateListingPage(
+                player,
                 holder.getInventory(),
                 listings,
                 page,
@@ -187,9 +190,10 @@ public final class AuctionGuiManager {
         );
 
         int maxPage = maxPageFor(view.totalListings(), mainContentSlots().length);
-        setPageButtons(inventory, "main.yml", page, maxPage, mainPreviousSlot(), mainNextSlot());
+        setPageButtons(player, inventory, "main.yml", page, maxPage, mainPreviousSlot(), mainNextSlot());
 
         inventory.setItem(mainClaimsSlot(), guiConfig.item(
+                player,
                 "main.yml",
                 "items.claims",
                 Material.CHEST,
@@ -198,22 +202,25 @@ public final class AuctionGuiManager {
                 true
         ));
         inventory.setItem(mainSortSlot(), guiConfig.item(
+                player,
                 "main.yml",
                 "items.sort",
                 Material.HOPPER,
                 "{theme}" + GuiTitles.smallCaps("Sort"),
-                sortLore("main.yml", sortMode),
+                sortLore(player, "main.yml", sortMode),
                 true
         ));
         inventory.setItem(mainFilterSlot(), guiConfig.item(
+                player,
                 "main.yml",
                 "items.filter",
                 Material.REDSTONE,
                 "{theme}" + GuiTitles.smallCaps("Filter"),
-                filterLore("main.yml", filterMode),
+                filterLore(player, "main.yml", filterMode),
                 true
         ));
         inventory.setItem(mainRefreshSlot(), guiConfig.item(
+                player,
                 "main.yml",
                 "items.refresh",
                 Material.MAP,
@@ -222,6 +229,7 @@ public final class AuctionGuiManager {
                 true
         ));
         inventory.setItem(mainManageSlot(), guiConfig.item(
+                player,
                 "main.yml",
                 "items.manage",
                 Material.CHEST,
@@ -233,13 +241,15 @@ public final class AuctionGuiManager {
                 true
         ));
         inventory.setItem(mainSearchSlot(), guiConfig.itemOrFallback(
+                player,
                 "main.yml",
                 "items.search",
-                buttons.search(searchQuery),
+                buttons.search(player, searchQuery),
                 "current", searchQuery == null || searchQuery.isBlank() ? "{muted}None" : "{theme}" + searchQuery
         ));
         if (settings.isPlayerOwnHistoryViewAllowed()) {
             inventory.setItem(mainHistoryOrClearSlot(), guiConfig.item(
+                    player,
                     "main.yml",
                     "items.history",
                     Material.BOOK,
@@ -249,14 +259,15 @@ public final class AuctionGuiManager {
             ));
         } else {
             inventory.setItem(mainHistoryOrClearSlot(), guiConfig.itemOrFallback(
+                    player,
                     "main.yml",
                     "items.clear-search",
-                    buttons.clearSearch("auctions"),
+                    buttons.clearSearch(player, "auctions"),
                     "target", "auctions"
             ));
         }
 
-        player.openInventory(inventory);
+        openForViewer(player, inventory);
     }
 
     public void openMyListingsGui(Player player, int requestedPage) {
@@ -269,7 +280,7 @@ public final class AuctionGuiManager {
         List<AuctionListing> listings = view.listings();
         int page = view.page();
 
-        String title = title("listings.yml", "title", "Manage Auctions") + " | "
+        String title = title(player, "listings.yml", "title", "Manage Auctions") + " | "
                 + GuiTitles.smallCaps("Page") + " " + (page + 1);
         MyListingsHolder holder = new MyListingsHolder(player.getUniqueId(), page, title);
         Inventory inventory = holder.getInventory();
@@ -278,6 +289,7 @@ public final class AuctionGuiManager {
         decorateFrame(inventory, frameMaterial);
         fillRow(inventory, 4, frameMaterial);
         populateListingPage(
+                player,
                 inventory,
                 listings,
                 page,
@@ -289,22 +301,25 @@ public final class AuctionGuiManager {
         );
 
         int maxPage = maxPageFor(view.totalListings(), listingsContentSlots().length);
-        setPageButtons(inventory, "listings.yml", page, maxPage, listingsPreviousSlot(), listingsNextSlot());
+        setPageButtons(player, inventory, "listings.yml", page, maxPage, listingsPreviousSlot(), listingsNextSlot());
 
         inventory.setItem(listingsBackSlot(), guiConfig.itemOrFallback(
+                player,
                 "listings.yml",
                 "items.back",
-                buttons.back()
+                buttons.back(player)
         ));
         inventory.setItem(listingsSortSlot(), guiConfig.item(
+                player,
                 "listings.yml",
                 "items.sort",
                 Material.HOPPER,
                 "{theme}" + GuiTitles.smallCaps("Sort"),
-                sortLore("listings.yml", sortMode),
+                sortLore(player, "listings.yml", sortMode),
                 true
         ));
         inventory.setItem(listingsRefreshSlot(), guiConfig.item(
+                player,
                 "listings.yml",
                 "items.refresh",
                 Material.MAP,
@@ -313,7 +328,7 @@ public final class AuctionGuiManager {
                 true
         ));
 
-        player.openInventory(inventory);
+        openForViewer(player, inventory);
     }
 
     public void openSellerViewGui(Player viewer, UUID sellerUuid, int requestedPage) {
@@ -328,7 +343,7 @@ public final class AuctionGuiManager {
         int page = view.page();
         String sellerName = resolvePlayerName(sellerUuid);
 
-        String title = title("seller-view.yml", "title", "Viewing") + " "
+        String title = title(viewer, "seller-view.yml", "title", "Viewing") + " "
                 + sellerName
                 + " | "
                 + GuiTitles.smallCaps("Page")
@@ -340,25 +355,28 @@ public final class AuctionGuiManager {
 
         Material frameMaterial = guiConfig.fillerMaterial("seller-view.yml", Material.GRAY_STAINED_GLASS_PANE);
         decorateFrame(inventory, frameMaterial);
-        populateListingPage(inventory, listings, page, false, adminView, sellerContentSlots(), holder::mapSlot);
+        populateListingPage(viewer, inventory, listings, page, false, adminView, sellerContentSlots(), holder::mapSlot);
 
         int maxPage = maxPageFor(view.totalListings(), sellerContentSlots().length);
-        setPageButtons(inventory, "seller-view.yml", page, maxPage, sellerPreviousSlot(), sellerNextSlot());
+        setPageButtons(viewer, inventory, "seller-view.yml", page, maxPage, sellerPreviousSlot(), sellerNextSlot());
 
         inventory.setItem(sellerBackSlot(), guiConfig.itemOrFallback(
+                viewer,
                 "seller-view.yml",
                 "items.back",
-                buttons.back()
+                buttons.back(viewer)
         ));
         inventory.setItem(sellerSortSlot(), guiConfig.item(
+                viewer,
                 "seller-view.yml",
                 "items.sort",
                 Material.HOPPER,
                 "{theme}" + GuiTitles.smallCaps("Sort"),
-                sortLore("seller-view.yml", sortMode),
+                sortLore(viewer, "seller-view.yml", sortMode),
                 true
         ));
         inventory.setItem(sellerRefreshSlot(), guiConfig.item(
+                viewer,
                 "seller-view.yml",
                 "items.refresh",
                 Material.MAP,
@@ -367,14 +385,14 @@ public final class AuctionGuiManager {
                 true
         ));
 
-        viewer.openInventory(inventory);
+        openForViewer(viewer, inventory);
     }
 
     public void openClaimsGui(Player player, int requestedPage) {
         List<ClaimEntry> claims = auctionService.getClaims(player.getUniqueId());
         int page = clampPageFor(requestedPage, claims.size(), claimsContentSlots().length);
 
-        String title = title("claims.yml", "title", "Claim Box") + " | "
+        String title = title(player, "claims.yml", "title", "Claim Box") + " | "
                 + GuiTitles.smallCaps("Page") + " " + (page + 1);
         ClaimHolder holder = new ClaimHolder(player.getUniqueId(), page, title);
         Inventory inventory = holder.getInventory();
@@ -395,21 +413,23 @@ public final class AuctionGuiManager {
             }
 
             ClaimEntry claim = claims.get(claimIndex);
-            ItemStack item = claimDisplayItem(claim);
+            ItemStack item = claimDisplayItem(player, claim);
 
             inventory.setItem(slot, item);
             holder.mapSlot(slot, claim.getId());
         }
 
         int maxPage = maxPageFor(claims.size(), contentSlots.length);
-        setPageButtons(inventory, "claims.yml", page, maxPage, claimsPreviousSlot(), claimsNextSlot());
+        setPageButtons(player, inventory, "claims.yml", page, maxPage, claimsPreviousSlot(), claimsNextSlot());
 
         inventory.setItem(claimsBackSlot(), guiConfig.itemOrFallback(
+                player,
                 "claims.yml",
                 "items.back",
-                buttons.back()
+                buttons.back(player)
         ));
         inventory.setItem(claimsRefreshSlot(), guiConfig.item(
+                player,
                 "claims.yml",
                 "items.refresh",
                 Material.MAP,
@@ -418,7 +438,7 @@ public final class AuctionGuiManager {
                 true
         ));
 
-        player.openInventory(inventory);
+        openForViewer(player, inventory);
     }
 
     public int getContentSlotsPerPage() {
@@ -439,7 +459,7 @@ public final class AuctionGuiManager {
         int page = clampPageFor(requestedPage, historyEntries.size(), contentSlots.length);
 
         String sellerName = resolvePlayerName(sellerUuid);
-        String title = title("history.yml", "title", "History")
+        String title = title(player, "history.yml", "title", "History")
                           + " | "
                           + sellerName
                           + " | "
@@ -464,12 +484,13 @@ public final class AuctionGuiManager {
             }
 
             SoldAuctionHistoryEntry entry = historyEntries.get(historyIndex);
-            inventory.setItem(slot, soldHistoryDisplayItem(entry));
+            inventory.setItem(slot, soldHistoryDisplayItem(player, entry));
         }
 
         if (historyEntries.isEmpty()) {
             int emptyMessageSlot = guiConfig.slot("history.yml", "items.empty.slot", 4);
             inventory.setItem(emptyMessageSlot, guiConfig.item(
+                    player,
                     "history.yml",
                     "items.empty",
                     Material.PAPER,
@@ -483,18 +504,20 @@ public final class AuctionGuiManager {
         if (maxPage > 0) {
             if (page > 0) {
                 inventory.setItem(historyPreviousSlot(), guiConfig.itemOrFallback(
+                        player,
                         "history.yml",
                         "items.previous",
-                        buttons.previousPage(page, maxPage),
+                        buttons.previousPage(player, page, maxPage),
                         "page", page + 1,
                         "max_page", maxPage + 1
                 ));
             }
             if (page < maxPage) {
                 inventory.setItem(historyNextSlot(), guiConfig.itemOrFallback(
+                        player,
                         "history.yml",
                         "items.next",
-                        buttons.nextPage(page, maxPage),
+                        buttons.nextPage(player, page, maxPage),
                         "page", page + 1,
                         "max_page", maxPage + 1
                 ));
@@ -502,12 +525,13 @@ public final class AuctionGuiManager {
         }
 
         inventory.setItem(historyBackSlot(), guiConfig.itemOrFallback(
+                player,
                 "history.yml",
                 "items.back",
-                buttons.back()
+                buttons.back(player)
         ));
 
-        player.openInventory(inventory);
+        openForViewer(player, inventory);
     }
 
     public boolean openContainerPreviewGui(Player player, UUID listingId, int returnPage) {
@@ -526,7 +550,7 @@ public final class AuctionGuiManager {
             return false;
         }
 
-        String title = title("preview.yml", "title", "Previewing") + " '" + resolveContainerDisplayName(listingItem) + "'";
+        String title = title(player, "preview.yml", "title", "Previewing") + " '" + resolveContainerDisplayName(listingItem) + "'";
         ContainerPreviewHolder holder = new ContainerPreviewHolder(player.getUniqueId(), sellerUuid, returnPage, title);
         Inventory inventory = holder.getInventory();
 
@@ -543,9 +567,10 @@ public final class AuctionGuiManager {
 
         inventory.setItem(guiConfig.slot("preview.yml", "items.preview.slot", CONTAINER_PREVIEW_ITEM_SLOT), listingItem.clone());
         inventory.setItem(previewBackSlot(), guiConfig.itemOrFallback(
+                player,
                 "preview.yml",
                 "items.back",
-                buttons.back()
+                buttons.back(player)
         ));
 
         for (int i = 0; i < 27; i++) {
@@ -555,7 +580,7 @@ public final class AuctionGuiManager {
             }
         }
 
-        player.openInventory(inventory);
+        openForViewer(player, inventory);
         return true;
     }
 
@@ -570,15 +595,16 @@ public final class AuctionGuiManager {
                   player.getUniqueId(),
                   listingId,
                   returnPage,
-                  title("admin-remove.yml", "title", "Admin Remove")
+                  title(player, "admin-remove.yml", "title", "Admin Remove")
           );
         Inventory inventory = holder.getInventory();
         decorateFrame(inventory, guiConfig.fillerMaterial("admin-remove.yml", Material.GRAY_STAINED_GLASS_PANE));
 
-        ItemStack preview = listingDisplayItem(listing, System.currentTimeMillis(), false, false, false);
+        ItemStack preview = listingDisplayItem(player, listing, System.currentTimeMillis(), false, false, false);
         inventory.setItem(guiConfig.slot("admin-remove.yml", "items.preview.slot", ADMIN_PREVIEW_SLOT), preview);
 
         inventory.setItem(adminReturnSlot(), guiConfig.item(
+                player,
                 "admin-remove.yml",
                 "items.return",
                 Material.CHEST,
@@ -591,6 +617,7 @@ public final class AuctionGuiManager {
                 true
         ));
         inventory.setItem(adminTakeSlot(), guiConfig.item(
+                player,
                 "admin-remove.yml",
                 "items.take",
                 Material.HOPPER,
@@ -603,6 +630,7 @@ public final class AuctionGuiManager {
                 true
         ));
         inventory.setItem(adminBackSlot(), guiConfig.item(
+                player,
                 "admin-remove.yml",
                 "items.back",
                 Material.ARROW,
@@ -611,10 +639,11 @@ public final class AuctionGuiManager {
                 true
         ));
 
-        player.openInventory(inventory);
+        openForViewer(player, inventory);
     }
 
     private void populateListingPage(
+            Player viewer,
             Inventory inventory,
             List<AuctionListing> listings,
             int page,
@@ -623,10 +652,11 @@ public final class AuctionGuiManager {
             int[] contentSlots,
             SlotMapper slotMapper
     ) {
-        populateListingPage(inventory, listings, page, myListingsView, adminView, contentSlots, slotMapper, null);
+        populateListingPage(viewer, inventory, listings, page, myListingsView, adminView, contentSlots, slotMapper, null);
     }
 
     private void populateListingPage(
+            Player viewer,
             Inventory inventory,
             List<AuctionListing> listings,
             int page,
@@ -649,12 +679,13 @@ public final class AuctionGuiManager {
             }
 
             AuctionListing listing = listings.get(i);
-            inventory.setItem(slot, listingDisplayItem(listing, now, myListingsView, adminView, true));
+            inventory.setItem(slot, listingDisplayItem(viewer, listing, now, myListingsView, adminView, true));
             slotMapper.map(slot, listing.getId());
         }
     }
 
     private ItemStack listingDisplayItem(
+            Player viewer,
             AuctionListing listing,
             long now,
             boolean myListingsView,
@@ -673,6 +704,7 @@ public final class AuctionGuiManager {
             String sellerName = resolvePlayerName(listing.getSellerUuid());
 
             lore.addAll(guiConfig.textList(
+                    viewer,
                     "main.yml",
                     "listing-lore.details",
                     List.of(
@@ -686,9 +718,10 @@ public final class AuctionGuiManager {
                     "time_left", FormatUtils.formatDuration(listing.getExpiresAt() - now)
             ));
             if (includeActionHints) {
-                lore.add(guiConfig.text("main.yml", "listing-lore.action-separator", ""));
+                lore.add(guiConfig.text(viewer, "main.yml", "listing-lore.action-separator", ""));
                 if (myListingsView) {
                     lore.addAll(guiConfig.textList(
+                            viewer,
                             "main.yml",
                             "listing-lore.owner-actions",
                             List.of("{theme}Click to cancel")
@@ -696,6 +729,7 @@ public final class AuctionGuiManager {
                 } else {
                     if (hasContainerItems(extractContainerContents(item))) {
                         lore.addAll(guiConfig.textList(
+                                viewer,
                                 "main.yml",
                                 "listing-lore.container-actions",
                                 List.of(
@@ -705,6 +739,7 @@ public final class AuctionGuiManager {
                         ));
                     } else {
                         lore.addAll(guiConfig.textList(
+                                viewer,
                                 "main.yml",
                                 "listing-lore.buy-actions",
                                 List.of("{theme}Click to buy")
@@ -712,6 +747,7 @@ public final class AuctionGuiManager {
                     }
                     if (adminView) {
                         lore.addAll(guiConfig.textList(
+                                viewer,
                                 "main.yml",
                                 "listing-lore.admin-actions",
                                 List.of("{muted}Press Drop Key: {theme}Admin remove options")
@@ -727,7 +763,7 @@ public final class AuctionGuiManager {
         return item;
     }
 
-    private ItemStack soldHistoryDisplayItem(SoldAuctionHistoryEntry entry) {
+    private ItemStack soldHistoryDisplayItem(Player viewer, SoldAuctionHistoryEntry entry) {
         ItemStack item = entry.getItem();
         ItemMeta meta = item.getItemMeta();
         if (meta == null) {
@@ -738,26 +774,30 @@ public final class AuctionGuiManager {
         if (meta.hasLore()) {
             lore.addAll(meta.getLore());
         }
-        lore.add(guiConfig.text("history.yml", "entry-lore.separator", ""));
+        lore.add(guiConfig.text(viewer, "history.yml", "entry-lore.separator", ""));
         lore.add(guiConfig.text(
+                viewer,
                 "history.yml",
                 "entry-lore.seller",
                 "{muted}Seller: {theme}{seller}",
                 "seller", resolvePlayerName(entry.getSellerUuid())
         ));
         lore.add(guiConfig.text(
+                viewer,
                 "history.yml",
                 "entry-lore.buyer",
                 "{muted}Buyer: {theme}{buyer}",
                 "buyer", resolvePlayerName(entry.getBuyerUuid())
         ));
         lore.add(guiConfig.text(
+                viewer,
                 "history.yml",
                 "entry-lore.price",
                 "{muted}Price: {theme}{price}",
                 "price", formatPrice(entry.getPrice())
         ));
         lore.add(guiConfig.text(
+                viewer,
                 "history.yml",
                 "entry-lore.sold",
                 "{muted}Sold: {theme}{sold}",
@@ -768,11 +808,12 @@ public final class AuctionGuiManager {
         return item;
     }
 
-    private ItemStack claimDisplayItem(ClaimEntry claim) {
+    private ItemStack claimDisplayItem(Player viewer, ClaimEntry claim) {
         if (claim.getType() == ClaimEntry.Type.ITEM) {
             ItemStack item = claim.getItem();
             if (item == null || item.getType().isAir()) {
                 return guiConfig.item(
+                        viewer,
                         "claims.yml",
                         "claim-entry.invalid",
                         Material.BARRIER,
@@ -789,9 +830,10 @@ public final class AuctionGuiManager {
                 if (meta.hasLore()) {
                     lore.addAll(meta.getLore());
                 }
-                lore.add(guiConfig.text("claims.yml", "claim-entry.separator", ""));
+                lore.add(guiConfig.text(viewer, "claims.yml", "claim-entry.separator", ""));
                 if (!claim.getNote().isBlank()) {
                     lore.add(guiConfig.text(
+                            viewer,
                             "claims.yml",
                             "claim-entry.item.note",
                             "{white}Note: {theme}{note}",
@@ -799,13 +841,15 @@ public final class AuctionGuiManager {
                     ));
                 }
                 lore.add(guiConfig.text(
+                        viewer,
                         "claims.yml",
                         "claim-entry.item.created",
                         "{white}Created: {theme}{created}",
                         "created", FormatUtils.formatDateTime(claim.getCreatedAt())
                 ));
-                lore.add(guiConfig.text("claims.yml", "claim-entry.action-separator", ""));
+                lore.add(guiConfig.text(viewer, "claims.yml", "claim-entry.action-separator", ""));
                 lore.add(guiConfig.text(
+                        viewer,
                         "claims.yml",
                         "claim-entry.item.action",
                         "{white}Click to claim this item"
@@ -820,12 +864,14 @@ public final class AuctionGuiManager {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(guiConfig.text(
+                    viewer,
                     "claims.yml",
                     "claim-entry.money.name",
                     "{theme}" + GuiTitles.smallCaps("Claim Money")
             ));
             List<String> lore = new ArrayList<>();
             lore.add(guiConfig.text(
+                    viewer,
                     "claims.yml",
                     "claim-entry.money.amount",
                     "{white}Amount: {theme}{amount}",
@@ -833,6 +879,7 @@ public final class AuctionGuiManager {
             ));
             if (!claim.getNote().isBlank()) {
                 lore.add(guiConfig.text(
+                        viewer,
                         "claims.yml",
                         "claim-entry.money.note",
                         "{white}Note: {theme}{note}",
@@ -840,13 +887,15 @@ public final class AuctionGuiManager {
                 ));
             }
             lore.add(guiConfig.text(
+                    viewer,
                     "claims.yml",
                     "claim-entry.money.created",
                     "{white}Created: {theme}{created}",
                     "created", FormatUtils.formatDateTime(claim.getCreatedAt())
             ));
-            lore.add(guiConfig.text("claims.yml", "claim-entry.action-separator", ""));
+            lore.add(guiConfig.text(viewer, "claims.yml", "claim-entry.action-separator", ""));
             lore.add(guiConfig.text(
+                    viewer,
                     "claims.yml",
                     "claim-entry.money.action",
                     "{white}Click to claim this money"
@@ -899,7 +948,18 @@ public final class AuctionGuiManager {
         );
     }
 
+    private void openForViewer(Player player, Inventory inventory) {
+        for (int slot = 0; slot < inventory.getSize(); slot++) {
+            ItemStack item = inventory.getItem(slot);
+            if (item != null) {
+                inventory.setItem(slot, DialogIcons.forViewer(player, item));
+            }
+        }
+        player.openInventory(inventory);
+    }
+
     private void setPageButtons(
+            Player viewer,
             Inventory inventory,
             String fileName,
             int page,
@@ -913,46 +973,52 @@ public final class AuctionGuiManager {
 
         if (page > 0) {
             inventory.setItem(previousSlot, guiConfig.itemOrFallback(
+                    viewer,
                     fileName,
                     "items.previous",
-                    buttons.previousPage(page, maxPage),
+                    buttons.previousPage(viewer, page, maxPage),
                     "page", page + 1,
                     "max_page", maxPage + 1
             ));
         }
         if (page < maxPage) {
             inventory.setItem(nextSlot, guiConfig.itemOrFallback(
+                    viewer,
                     fileName,
                     "items.next",
-                    buttons.nextPage(page, maxPage),
+                    buttons.nextPage(viewer, page, maxPage),
                     "page", page + 1,
                     "max_page", maxPage + 1
             ));
         }
     }
 
-    private List<String> sortLore(String fileName, SortMode selectedMode) {
-        return CycleOptions.lore(messages, selectedMode.name(), configuredCycleOptions(
+    private List<String> sortLore(Player viewer, String fileName, SortMode selectedMode) {
+        return FoButtonStyle.buttonLore(CycleOptions.information(messages, selectedMode.name(), configuredCycleOptions(
+                viewer,
                 fileName,
                 "items.sort.lore-options",
                 SortMode.cycleOptions()
-        ));
+        )), "cycle");
     }
 
-    private List<String> filterLore(String fileName, FilterMode selectedMode) {
-        return CycleOptions.lore(messages, selectedMode.name(), configuredCycleOptions(
+    private List<String> filterLore(Player viewer, String fileName, FilterMode selectedMode) {
+        return FoButtonStyle.buttonLore(CycleOptions.information(messages, selectedMode.name(), configuredCycleOptions(
+                viewer,
                 fileName,
                 "items.filter.lore-options",
                 FilterMode.cycleOptions()
-        ));
+        )), "cycle");
     }
 
     private List<CycleOption> configuredCycleOptions(
+            Player viewer,
             String fileName,
             String path,
             List<CycleOption> defaults
     ) {
         List<String> labels = guiConfig.textList(
+                viewer,
                 fileName,
                 path,
                 defaults.stream().map(CycleOption::label).toList()
@@ -1001,8 +1067,8 @@ public final class AuctionGuiManager {
         return guiConfig.slots("history.yml", "content-slots", HISTORY_CONTENT_SLOTS);
     }
 
-    private String title(String fileName, String path, String fallback) {
-        return GuiTitles.format(guiConfig.text(fileName, path, fallback));
+    private String title(Player viewer, String fileName, String path, String fallback) {
+        return GuiTitles.format(DialogIcons.fallbackText(guiConfig.text(viewer, fileName, path, fallback)));
     }
 
     private ItemStack pane(Material material) {
@@ -1101,7 +1167,7 @@ public final class AuctionGuiManager {
                   player.getUniqueId(),
                   price,
                   listingFee,
-                  title("confirmation.yml", "sell-title", CONFIRMATION_TITLE)
+                  title(player, "confirmation.yml", "sell-title", CONFIRMATION_TITLE)
           );
         Inventory inventory = holder.getInventory();
 
@@ -1113,8 +1179,9 @@ public final class AuctionGuiManager {
             if (meta.hasLore()) {
                 lore.addAll(meta.getLore());
             }
-            lore.add(guiConfig.text("confirmation.yml", "preview-lore.separator", ""));
+            lore.add(guiConfig.text(player, "confirmation.yml", "preview-lore.separator", ""));
             lore.addAll(guiConfig.textList(
+                    player,
                     "confirmation.yml",
                     "preview-lore.sell",
                     List.of(
@@ -1131,6 +1198,7 @@ public final class AuctionGuiManager {
 
         // Cancel button
         ItemStack cancelButton = guiConfig.item(
+                player,
                 "confirmation.yml",
                 "items.cancel",
                 Material.RED_STAINED_GLASS_PANE,
@@ -1147,6 +1215,7 @@ public final class AuctionGuiManager {
 
         // Confirm button
         ItemStack confirmButton = guiConfig.item(
+                player,
                 "confirmation.yml",
                 "items.confirm",
                 Material.LIME_STAINED_GLASS_PANE,
@@ -1161,7 +1230,7 @@ public final class AuctionGuiManager {
         );
         inventory.setItem(confirmationConfirmSlot(), confirmButton);
 
-        player.openInventory(inventory);
+        openForViewer(player, inventory);
     }
 
     public boolean openBuyConfirmationGui(Player player, UUID listingId, int returnPage) {
@@ -1180,7 +1249,7 @@ public final class AuctionGuiManager {
                   listing.getPrice(),
                   returnPage,
                   sellerUuid,
-                  title("confirmation.yml", "buy-title", CONFIRMATION_TITLE)
+                  title(player, "confirmation.yml", "buy-title", CONFIRMATION_TITLE)
           );
         Inventory inventory = holder.getInventory();
 
@@ -1191,8 +1260,9 @@ public final class AuctionGuiManager {
             if (itemMeta.hasLore()) {
                 lore.addAll(itemMeta.getLore());
             }
-            lore.add(guiConfig.text("confirmation.yml", "preview-lore.separator", ""));
+            lore.add(guiConfig.text(player, "confirmation.yml", "preview-lore.separator", ""));
             lore.addAll(guiConfig.textList(
+                    player,
                     "confirmation.yml",
                     "preview-lore.buy",
                     List.of(
@@ -1208,6 +1278,7 @@ public final class AuctionGuiManager {
         inventory.setItem(confirmationItemSlot(), displayItem);
 
         ItemStack cancelButton = guiConfig.item(
+                player,
                 "confirmation.yml",
                 "items.cancel",
                 Material.RED_STAINED_GLASS_PANE,
@@ -1220,6 +1291,7 @@ public final class AuctionGuiManager {
         inventory.setItem(confirmationCancelSlot(), cancelButton);
 
         ItemStack confirmButton = guiConfig.item(
+                player,
                 "confirmation.yml",
                 "items.confirm",
                 Material.LIME_STAINED_GLASS_PANE,
@@ -1231,7 +1303,7 @@ public final class AuctionGuiManager {
         );
         inventory.setItem(confirmationConfirmSlot(), confirmButton);
 
-        player.openInventory(inventory);
+        openForViewer(player, inventory);
         return true;
     }
 

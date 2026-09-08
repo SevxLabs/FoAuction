@@ -1,28 +1,48 @@
 # Claim box GUI. Money claims remain for older data; new sales pay sellers directly.
-title: "Claim Box"
+title: "ᴄʟᴀɪᴍ ʙᴏx"
 content-slots: [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34]
 items:
   previous:
     slot: 45
-    name: "#ffffff← Previous Page"
+    name: ":arrow: {theme}&lPREVIOUS PAGE"
     lore:
-      - "#ffffffPage {page}/{max_page}"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fPage {page}/{max_page}."
+      - " "
+      - "{good}→ Click to Previous Page ←"
   back:
     slot: 49
-    name: "#ffd966← Back"
+    name: ":iron_door: {theme}&lBACK"
     lore:
-      - "#ffffffClick to return to the previous menu."
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fReturn to the previous menu."
+      - " "
+      - "{good}→ Click to Go Back ←"
   refresh:
     slot: 48
     material: MAP
-    name: "{theme}ʀᴇꜰʀᴇꜱʜ"
+    name: ":map: {theme}&lREFRESH"
     lore:
-      - "{white}Reload claims"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fRefresh your claim box."
+      - " "
+      - "{good}→ Click to Refresh ←"
   next:
     slot: 53
-    name: "#ffffff→ Next Page"
+    name: ":arrow: {theme}&lNEXT PAGE"
     lore:
-      - "#ffffffPage {page}/{max_page}"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fPage {page}/{max_page}."
+      - " "
+      - "{good}→ Click to Next Page ←"
 
 # Text appended to claim entries. Names/lore of the claimed item itself stay untouched.
 claim-entry:

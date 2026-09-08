@@ -3,13 +3,17 @@ package me.foesio.foAuction.gui;
 import me.foesio.foAuction.FoAuction;
 import me.foesio.foAuction.utils.ColorPalette;
 import me.foesio.core.config.ResourceFiles;
+import me.foesio.core.dialog.DialogIcons;
+import me.foesio.core.gui.GuiItemConfig;
 import me.foesio.core.material.MaterialTypes;
+import me.foesio.core.migration.FoMigrationStore;
 import me.foesio.core.message.FoMessageService;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -25,6 +29,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public final class GuiConfigService {
     private static final String[] GUI_FILES = {
@@ -42,12 +47,15 @@ public final class GuiConfigService {
 
     private final JavaPlugin plugin;
     private final FoMessageService messages;
+    private final FoMigrationStore migrations;
     private final Map<String, FileConfiguration> configs;
 
     public GuiConfigService(JavaPlugin plugin, FoMessageService messages) {
         this.plugin = plugin;
         this.messages = messages;
+        this.migrations = FoMigrationStore.create(plugin);
         this.configs = new HashMap<>();
+        migrateGuiFiles();
         reload();
     }
 
@@ -63,7 +71,6 @@ public final class GuiConfigService {
             File file = new File(folder, fileName);
             ResourceFiles.saveDefault(plugin, "guis/" + fileName);
             YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-            backfillMissingDefaults(fileName, file, config);
             configs.put(fileName, config);
         }
         for (String fileName : LEGACY_GUI_FILES) {
@@ -74,16 +81,16 @@ public final class GuiConfigService {
         }
     }
 
-    public String text(String fileName, String path, String fallback, Object... placeholders) {
+    public String text(Player viewer, String fileName, String path, String fallback, Object... placeholders) {
         FileConfiguration config = config(fileName);
-        return messages.renderTemplate(config.getString(path, fallback), placeholderValues(placeholders));
+        return messages.renderTemplateForViewer(viewer, config.getString(path, fallback), placeholderValues(placeholders));
     }
 
-    public List<String> textList(String fileName, String path, List<String> fallback, Object... placeholders) {
+    public List<String> textList(Player viewer, String fileName, String path, List<String> fallback, Object... placeholders) {
         FileConfiguration config = config(fileName);
         List<String> values = config.isList(path) ? config.getStringList(path) : fallback;
         Map<String, String> placeholderValues = placeholderValues(placeholders);
-        return values.stream().map(line -> messages.renderTemplate(line, placeholderValues)).toList();
+        return values.stream().map(line -> messages.renderTemplateForViewer(viewer, line, placeholderValues)).toList();
     }
 
     public int slot(String fileName, String path, int fallback) {
@@ -119,6 +126,7 @@ public final class GuiConfigService {
     }
 
     public ItemStack item(
+            Player viewer,
             String fileName,
             String path,
             Material fallbackMaterial,
@@ -136,8 +144,16 @@ public final class GuiConfigService {
                     ? config.getStringList(path + ".lore")
                     : fallbackLore;
             Map<String, String> placeholderValues = placeholderValues(placeholders);
-            meta.setDisplayName(messages.renderTemplate(config.getString(path + ".name", fallbackName), placeholderValues));
-            meta.setLore(lore.stream().map(line -> messages.renderTemplate(line, placeholderValues)).toList());
+            String name = messages.renderTemplateForViewer(viewer,
+                    config.getString(path + ".name", fallbackName), placeholderValues);
+            List<String> renderedLore = lore.stream()
+                    .map(line -> messages.renderTemplateForViewer(viewer, line, placeholderValues))
+                    .toList();
+            applyViewerMeta(meta, viewer, name, renderedLore);
+            if (config.isSet(path + ".custom-model-data")) {
+                meta.setCustomModelData(GuiItemConfig.parseCustomModelData(
+                        config.get(path + ".custom-model-data"), null));
+            }
             meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             if (config.getBoolean(path + ".hide-enchants", true)) {
                 meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -160,16 +176,18 @@ public final class GuiConfigService {
      * material, text, lore, amount, glow, and item-flag choices.
      */
     public ItemStack itemOrFallback(
+            Player viewer,
             String fileName,
             String path,
             ItemStack fallback,
             Object... placeholders
     ) {
         FileConfiguration config = config(fileName);
-        return itemOrFallback(fileName, config, path, fallback, placeholders);
+        return itemOrFallback(viewer, fileName, config, path, fallback, placeholders);
     }
 
     private ItemStack itemOrFallback(
+            Player viewer,
             String fileName,
             FileConfiguration config,
             String path,
@@ -194,12 +212,33 @@ public final class GuiConfigService {
         }
 
         Map<String, String> placeholderValues = placeholderValues(placeholders);
-        if (config.isSet(path + ".name")) {
-            meta.setDisplayName(messages.renderTemplate(config.getString(path + ".name", ""), placeholderValues));
-        }
-        if (config.isSet(path + ".lore")) {
+        boolean hasNameOverride = config.isSet(path + ".name");
+        boolean hasLoreOverride = config.isSet(path + ".lore");
+        if (hasNameOverride && hasLoreOverride) {
+            String name = messages.renderTemplateForViewer(viewer,
+                    config.getString(path + ".name", ""), placeholderValues);
             List<String> lore = config.isList(path + ".lore") ? config.getStringList(path + ".lore") : List.of();
-            meta.setLore(lore.stream().map(line -> messages.renderTemplate(line, placeholderValues)).toList());
+            List<String> renderedLore = lore.stream()
+                    .map(line -> messages.renderTemplateForViewer(viewer, line, placeholderValues))
+                    .toList();
+            applyViewerMeta(meta, viewer, name, renderedLore);
+        } else if (hasNameOverride) {
+            String name = messages.renderTemplateForViewer(viewer,
+                    config.getString(path + ".name", ""), placeholderValues);
+            if (!DialogIcons.applyItemMeta(meta, viewer, DialogIcons.render(viewer, name), meta.lore())) {
+                meta.setDisplayName(DialogIcons.fallbackText(name));
+            }
+        } else if (hasLoreOverride) {
+            List<String> lore = config.isList(path + ".lore") ? config.getStringList(path + ".lore") : List.of();
+            List<String> renderedLore = lore.stream()
+                    .map(line -> messages.renderTemplateForViewer(viewer, line, placeholderValues))
+                    .toList();
+            List<net.kyori.adventure.text.Component> loreComponents = renderedLore.stream()
+                    .map(line -> DialogIcons.render(viewer, line))
+                    .toList();
+            if (!DialogIcons.applyItemMeta(meta, viewer, meta.displayName(), loreComponents)) {
+                meta.setLore(renderedLore.stream().map(DialogIcons::fallbackText).toList());
+            }
         }
         if (config.isSet(path + ".hide-enchants")) {
             if (config.getBoolean(path + ".hide-enchants")) {
@@ -216,8 +255,25 @@ public final class GuiConfigService {
                 meta.removeEnchant(Enchantment.UNBREAKING);
             }
         }
+        if (config.isSet(path + ".custom-model-data")) {
+            meta.setCustomModelData(GuiItemConfig.parseCustomModelData(
+                    config.get(path + ".custom-model-data"), null));
+        }
         item.setItemMeta(meta);
         return item;
+    }
+
+    private void applyViewerMeta(ItemMeta meta, Player viewer, String name, List<String> lore) {
+        String safeName = name == null ? "" : name;
+        if (DialogIcons.applyItemMeta(meta, viewer, safeName, lore)) {
+            return;
+        }
+        if (name != null) {
+            meta.setDisplayName(DialogIcons.fallbackText(name));
+        }
+        meta.setLore(lore == null
+                ? List.of()
+                : lore.stream().map(DialogIcons::fallbackText).toList());
     }
 
     /**
@@ -283,10 +339,10 @@ public final class GuiConfigService {
         return config;
     }
 
-    private void backfillMissingDefaults(String fileName, File file, YamlConfiguration config) {
+    private boolean backfillMissingDefaults(String fileName, File file, YamlConfiguration config) {
         try (InputStream input = plugin.getResource("guis/" + fileName)) {
             if (input == null) {
-                return;
+                return true;
             }
 
             YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
@@ -294,6 +350,7 @@ public final class GuiConfigService {
             );
             boolean changed = false;
             changed |= migrateLegacyMainHistoryButtons(fileName, config);
+            changed |= migrateDefaultButtonStyles(fileName, config, defaults);
             for (String path : defaults.getKeys(true)) {
                 Object value = defaults.get(path);
                 if (value instanceof ConfigurationSection) {
@@ -314,10 +371,99 @@ public final class GuiConfigService {
                 config.save(file);
                 FoAuction.fileLogger().info("Backfilled missing GUI defaults in guis/" + fileName + ".");
             }
+            return true;
         } catch (IOException exception) {
             plugin.getLogger().warning(ColorPalette.log("Could not update GUI config guis/" + fileName + ": " + exception.getMessage()));
                 FoAuction.fileLogger().warn("Could not update GUI config guis/" + fileName + ": " + exception.getMessage() + ".");
+            return false;
         }
+    }
+
+    /**
+     * GUI defaults and legacy presentation migrations are one-time release
+     * work. Reload must only re-read the live files so a deliberate owner
+     * removal is not silently restored.
+     */
+    private void migrateGuiFiles() {
+        migrations.runToVersion(2, () -> {
+            for (String fileName : GUI_FILES) {
+                File file = new File(plugin.getDataFolder(), "guis" + File.separator + fileName);
+                ResourceFiles.saveDefault(plugin, "guis/" + fileName);
+                YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+                if (!backfillMissingDefaults(fileName, file, config)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+
+    private boolean migrateDefaultButtonStyles(String fileName, YamlConfiguration config, YamlConfiguration defaults) {
+        boolean changed = false;
+        if ("main.yml".equals(fileName)) {
+            changed |= replaceExactDefault(config, defaults, "items.claims.name", "{theme}ᴄʟᴀɪᴍꜱ");
+            changed |= replaceExactDefault(config, defaults, "items.claims.lore", List.of("{white}Open your claim box"));
+            changed |= replaceExactDefault(config, defaults, "items.sort.name", "{theme}ꜱᴏʀᴛ");
+            changed |= replaceExactDefault(config, defaults, "items.filter.name", "{theme}ꜰɪʟᴛᴇʀ");
+            changed |= replaceExactDefault(config, defaults, "items.refresh.name", "{theme}ʀᴇꜰʀᴇꜱʜ");
+            changed |= replaceExactDefault(config, defaults, "items.refresh.lore", List.of("{white}Reload listings"));
+            changed |= replaceExactDefault(config, defaults, "items.manage.name", "{theme}ᴍᴀɴᴀɢᴇ ᴀᴜᴄᴛɪᴏɴꜱ");
+            changed |= replaceExactDefault(config, defaults, "items.manage.lore", List.of(
+                    "{white}View all your active auctions",
+                    "{white}Click any listing to cancel"
+            ));
+            changed |= replaceExactDefault(config, defaults, "items.search.name", "{theme}ꜱᴇᴀʀᴄʜ");
+            changed |= replaceExactDefault(config, defaults, "items.search.lore", List.of("{white}Open search prompt"));
+            changed |= replaceExactDefault(config, defaults, "items.history.name", "{theme}ʜɪꜱᴛᴏʀʏ");
+            changed |= replaceExactDefault(config, defaults, "items.history.lore", List.of("{white}Click to see sold auctions"));
+            changed |= replaceExactDefault(config, defaults, "items.clear-search.name", "{theme}ʜɪꜱᴛᴏʀʏ");
+            changed |= replaceExactDefault(config, defaults, "items.clear-search.lore", List.of("{white}Click to see sold auctions"));
+        } else if ("listings.yml".equals(fileName) || "seller-view.yml".equals(fileName)) {
+            changed |= replaceExactDefault(config, defaults, "items.back.name", "{theme}ʙᴀᴄᴋ");
+            changed |= replaceExactDefault(config, defaults, "items.back.lore", List.of("{white}Return to auction house"));
+            changed |= replaceExactDefault(config, defaults, "items.sort.name", "{theme}ꜱᴏʀᴛ");
+            changed |= replaceExactDefault(config, defaults, "items.refresh.name", "{theme}ʀᴇꜰʀᴇꜱʜ");
+            String refreshLore = "listings.yml".equals(fileName)
+                    ? "{white}Reload your listings"
+                    : "{white}Reload seller listings";
+            changed |= replaceExactDefault(config, defaults, "items.refresh.lore", List.of(refreshLore));
+        } else if ("claims.yml".equals(fileName)) {
+            changed |= replaceExactDefault(config, defaults, "items.back.name", "{theme}ʙᴀᴄᴋ");
+            changed |= replaceExactDefault(config, defaults, "items.back.lore", List.of("{white}Return to auction house"));
+            changed |= replaceExactDefault(config, defaults, "items.refresh.name", "{theme}ʀᴇꜰʀᴇꜱʜ");
+            changed |= replaceExactDefault(config, defaults, "items.refresh.lore", List.of("{white}Reload claims"));
+        } else if ("history.yml".equals(fileName)) {
+            changed |= replaceExactDefault(config, defaults, "items.back.name", "{theme}ʙᴀᴄᴋ");
+            changed |= replaceExactDefault(config, defaults, "items.back.lore", List.of("{white}Return to auction house"));
+        } else if ("preview.yml".equals(fileName)) {
+            changed |= replaceExactDefault(config, defaults, "items.back.name", "{theme}ʙᴀᴄᴋ");
+            changed |= replaceExactDefault(config, defaults, "items.back.lore", List.of("{white}Return to auction house"));
+        } else if ("confirmation.yml".equals(fileName)) {
+            changed |= replaceExactDefault(config, defaults, "items.cancel.name", "{bad}ᴄᴀɴᴄᴇʟ");
+            changed |= replaceExactDefault(config, defaults, "items.cancel.lore", List.of(
+                    "{white}Price: {theme}{price}",
+                    "{white}Fee: {theme}{fee}"
+            ));
+            changed |= replaceExactDefault(config, defaults, "items.confirm.name", "{good}ᴄᴏɴꜰɪʀᴍ");
+            changed |= replaceExactDefault(config, defaults, "items.confirm.lore", List.of(
+                    "{white}Price: {theme}{price}",
+                    "{white}Fee: {theme}{fee}"
+            ));
+        }
+        return changed;
+    }
+
+    private boolean replaceExactDefault(YamlConfiguration config, YamlConfiguration defaults, String path, Object oldValue) {
+        if (!config.isSet(path) || !Objects.equals(config.get(path), oldValue) || !defaults.isSet(path)) {
+            return false;
+        }
+        Object current = config.get(path);
+        Object replacement = defaults.get(path);
+        if (Objects.equals(current, replacement)) {
+            return false;
+        }
+        config.set(path, replacement);
+        return true;
     }
 
     private boolean migrateLegacyAuctionContentSlots(String fileName, YamlConfiguration config) {
