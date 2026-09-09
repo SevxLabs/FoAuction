@@ -1,7 +1,6 @@
 package me.foesio.foAuction.service;
 
 import me.foesio.foAuction.config.AuctionSettings;
-import me.foesio.foAuction.economy.EconomyService;
 import me.foesio.foAuction.model.AuctionListing;
 import me.foesio.foAuction.model.ClaimEntry;
 import me.foesio.foAuction.model.FilterMode;
@@ -15,6 +14,7 @@ import me.foesio.foAuction.utils.ColorPalette;
 import me.foesio.foAuction.utils.FormatUtils;
 import me.foesio.core.message.FoMessageService;
 import me.foesio.core.inventory.InventoryDepositService;
+import me.foesio.core.economy.VaultEconomyBridge;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.ChatColor;
@@ -67,7 +67,7 @@ public final class AuctionService {
 
     private final JavaPlugin plugin;
     private final IUserDataRepository userDataRepository;
-    private final EconomyService economyService;
+    private final VaultEconomyBridge economyService;
     private final AuctionSettings settings;
     private final DiscordWebhookService discordWebhookService;
     private final PlayerNameCache playerNameCache;
@@ -86,7 +86,7 @@ public final class AuctionService {
     public AuctionService(
             JavaPlugin plugin,
             IUserDataRepository userDataRepository,
-            EconomyService economyService,
+            VaultEconomyBridge economyService,
             AuctionSettings settings,
             DiscordWebhookService discordWebhookService,
             PlayerNameCache playerNameCache,

@@ -1,9 +1,9 @@
 package me.foesio.foAuction.commands;
 
 import me.foesio.foAuction.config.AuctionSettings;
-import me.foesio.foAuction.economy.EconomyService;
 import me.foesio.foAuction.gui.AuctionGuiManager;
 import me.foesio.foAuction.service.AuctionService;
+import me.foesio.core.economy.VaultEconomyBridge;
 import me.foesio.foAuction.utils.FormatUtils;
 import me.foesio.foAuction.utils.InputValidationUtils;
 import me.foesio.foAuction.utils.SoundFeedback;
@@ -27,7 +27,7 @@ import java.util.Locale;
 public final class AuctionCommand implements CommandExecutor, TabCompleter {
     private final AuctionGuiManager guiManager;
     private final AuctionService auctionService;
-    private final EconomyService economyService;
+    private final VaultEconomyBridge economyService;
     private final AuctionSettings settings;
     private final FoMessageService messages;
     private final FoAdminSounds adminSounds;
@@ -35,7 +35,7 @@ public final class AuctionCommand implements CommandExecutor, TabCompleter {
     public AuctionCommand(
             AuctionGuiManager guiManager,
             AuctionService auctionService,
-            EconomyService economyService,
+            VaultEconomyBridge economyService,
             AuctionSettings settings,
             FoMessageService messages,
             FoAdminSounds adminSounds

@@ -2,6 +2,7 @@ package me.foesio.foAuction;
 
 import me.foesio.core.FoCoreContext;
 import me.foesio.core.FoPluginCore;
+import me.foesio.core.economy.VaultEconomyBridge;
 import me.foesio.core.command.FoAdminCommand;
 import me.foesio.core.command.FoAdminCommandContext;
 import me.foesio.core.command.FoAdminMessages;
@@ -27,7 +28,6 @@ import me.foesio.core.update.UpdateNoticeService;
 
 import me.foesio.foAuction.commands.AuctionCommand;
 import me.foesio.foAuction.config.AuctionSettings;
-import me.foesio.foAuction.economy.EconomyService;
 import me.foesio.foAuction.gui.AuctionGuiManager;
 import me.foesio.foAuction.gui.GuiConfigService;
 import me.foesio.foAuction.gui.editor.AdminEditorManager;
@@ -64,7 +64,7 @@ public final class FoAuction extends JavaPlugin {
     private FoMessageService messageService;
     private GuiConfigService guiConfigService;
     private ConfiguredTextDialogs dialogTexts;
-    private EconomyService economyService;
+    private VaultEconomyBridge economyService;
     private DatabaseManager databaseManager;
     private IUserDataRepository userDataRepository;
     private AuctionService auctionService;
@@ -100,8 +100,8 @@ public final class FoAuction extends JavaPlugin {
         dialogTexts.load();
         fileLogger.info("Config, messages, GUI files, and public dialogs loaded.");
 
-        economyService = new EconomyService();
-        if (!economyService.setup(this)) {
+        economyService = core.createVaultEconomy();
+        if (!economyService.isAvailable()) {
             getLogger().severe(ColorPalette.log("Vault with a valid economy provider is required."));
             fileLogger.error("Vault with a valid economy provider is required.", null);
             getServer().getPluginManager().disablePlugin(this);
@@ -312,8 +312,13 @@ public final class FoAuction extends JavaPlugin {
           fileLogger.info("Reload started.");
           FoReloadResult result = FoReloadRegistry.create()
                   .add("config", settings::reload)
-                  .add("core", this::refreshCoreContext)
-                  .add("sounds", sounds::reload)
+          .add("core", this::refreshCoreContext)
+                  .add("economy", () -> {
+                      if (!economyService.reload()) {
+                          throw new IllegalStateException("Vault economy provider not found");
+                      }
+                  })
+          .add("sounds", sounds::reload)
                   .addMessages(messageService)
                   .add("guis", guiConfigService::reload)
                   .add("dialogs", dialogTexts::reload)
