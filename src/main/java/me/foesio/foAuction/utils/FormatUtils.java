@@ -1,7 +1,7 @@
 package me.foesio.foAuction.utils;
 
+import me.foesio.core.number.NumberFormatters;
 import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -10,14 +10,6 @@ import java.util.Locale;
 
 public final class FormatUtils {
     private static final DecimalFormat PRICE_FORMAT = new DecimalFormat("#,##0.####");
-    private static final DecimalFormat COMPACT_PRICE_FORMAT = new DecimalFormat("0.00", DecimalFormatSymbols.getInstance(Locale.US));
-    private static final double[] COMPACT_PRICE_FACTORS = {
-            1_000_000_000_000D,
-            1_000_000_000D,
-            1_000_000D,
-            1_000D
-    };
-    private static final String[] COMPACT_PRICE_SUFFIXES = {"T", "B", "M", "K"};
     private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
             .withZone(ZoneId.systemDefault());
 
@@ -32,20 +24,7 @@ public final class FormatUtils {
         if (!compact || Math.abs(value) < 1_000D) {
             return formatPrice(value);
         }
-
-        double absolute = Math.abs(value);
-        for (int i = 0; i < COMPACT_PRICE_FACTORS.length; i++) {
-            double factor = COMPACT_PRICE_FACTORS[i];
-            if (absolute >= factor) {
-                double scaled = value / factor;
-                if (Math.abs(scaled) >= 999.995D && i > 0) {
-                    return COMPACT_PRICE_FORMAT.format(value / COMPACT_PRICE_FACTORS[i - 1])
-                            + COMPACT_PRICE_SUFFIXES[i - 1];
-                }
-                return COMPACT_PRICE_FORMAT.format(scaled) + COMPACT_PRICE_SUFFIXES[i];
-            }
-        }
-        return formatPrice(value);
+        return NumberFormatters.compact(value);
     }
 
     public static String formatDuration(long millis) {

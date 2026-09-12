@@ -20,7 +20,8 @@ auction:
   # Lowest price players can list items for. Supports decimals.
   min-price: 0.01
   # Highest price players can list items for.
-  max-price: 999999999999999
+  # Prices support the K through Td suffixes and can continue above Td.
+  max-price: 1.7976931348623157E308
   # Fee percent charged when creating a listing. Example: 2.5 = 2.5%.
   listing-fee-percent: 0
   # Default active listing slots when player has no foauction.slots.<amount> permission.
@@ -33,8 +34,8 @@ gui:
   refresh-cooldown-millis: 500
   # If true, sell/buy actions open a confirmation inventory.
   confirmation-gui-enabled: true
-  # If true, prices display with compact suffixes like 1.50K, 2.00M, 3.00B, 4.00T.
-  compact-price-format: false
+  # If true, prices display with compact suffixes from K through Td.
+  compact-price-format: true
 
 blacklisted-items:
   # Materials players cannot list.

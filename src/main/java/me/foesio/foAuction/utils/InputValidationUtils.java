@@ -15,11 +15,19 @@ public final class InputValidationUtils {
     // Constants for validation limits
     private static final int MAX_STRING_LENGTH = 256;
     private static final int MAX_SEARCH_QUERY_LENGTH = 100;
-    private static final BigDecimal MAX_SAFE_PRICE = new BigDecimal("999999999999999");
+    /**
+     * Auction prices are stored and passed through Vault as finite doubles.
+     * Keep validation aligned with that representation instead of the old
+     * 999,999,999,999,999 ceiling, which rejected values such as 1000Td.
+     */
+    private static final BigDecimal MAX_SAFE_PRICE = BigDecimal.valueOf(Double.MAX_VALUE);
     private static final BigDecimal MIN_SAFE_PRICE = new BigDecimal("0.01");
     
     // Patterns for validation
-    private static final Pattern PRICE_PATTERN = Pattern.compile("^(\\d+(?:\\.\\d{1,6})?)([kmbt])?$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PRICE_PATTERN = Pattern.compile(
+            "^(\\d+(?:\\.\\d{1,6})?)(k|m|b|t|qa|qi|sx|sp|oc|no|dc|ud|dd|td)?$",
+            Pattern.CASE_INSENSITIVE
+    );
     private static final Pattern SAFE_STRING_PATTERN = Pattern.compile("^[\\w\\s\\-._]+$");
     private static final Pattern UUID_PATTERN = Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
     private static final Pattern PLAYER_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{1,16}$");
@@ -61,7 +69,7 @@ public final class InputValidationUtils {
     private static BigDecimal parsePrice(String cleanPrice) throws InvalidInputException {
         Matcher matcher = PRICE_PATTERN.matcher(cleanPrice);
         if (!matcher.matches()) {
-            throw new InvalidInputException("Invalid price format (examples: 500, 50K, 1.50M)");
+            throw new InvalidInputException("Invalid price format (examples: 500, 50K, 1.5M, 1Qa)");
         }
 
         return LargeNumberParser.parse(cleanPrice)

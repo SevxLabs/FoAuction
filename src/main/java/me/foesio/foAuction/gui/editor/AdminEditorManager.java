@@ -549,7 +549,7 @@ public final class AdminEditorManager {
                 "{white}Current: {theme}{value}"
         ));
         config.set("gui.editor.compact-prices.lore", List.of(
-                "{white}Show prices with compact suffixes like 1.50K.",
+                "{white}Show prices with compact suffixes like 1.5K or 1Qa.",
                 "{white}Current: {theme}{value}"
         ));
         return config;
@@ -1201,8 +1201,8 @@ public final class AdminEditorManager {
     }
 
     private enum PromptType {
-        MIN_PRICE("minimum price", "money amount, examples: 500, 50K, 1.50M", 32),
-        MAX_PRICE("maximum price", "money amount, examples: 500, 50K, 1.50M", 32),
+        MIN_PRICE("minimum price", "money amount, examples: 500, 50K, 1.5M, 1Qa", 32),
+        MAX_PRICE("maximum price", "money amount, examples: 500, 50K, 1.5M, 1Qa", 32),
         LISTING_FEE("listing fee percent", "number 0-100, example: 2.5", 32),
         DEFAULT_SLOTS("default max slots", "whole number 1-1000", 16),
         EXPIRE_DAYS("expire days", "whole number 1-30", 16),

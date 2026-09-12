@@ -15,7 +15,8 @@ import java.util.Set;
 
 public final class AuctionSettings {
     private static final double ABSOLUTE_MIN_PRICE = 0.01D;
-    private static final double ABSOLUTE_MAX_PRICE = 999_999_999_999_999D;
+    /** Auction prices use finite doubles throughout persistence and Vault. */
+    private static final double ABSOLUTE_MAX_PRICE = Double.MAX_VALUE;
     private static final int FIXED_EXPIRE_DAYS = 7;
 
     private final JavaPlugin plugin;
@@ -198,7 +199,7 @@ public final class AuctionSettings {
         config.addDefault("auction.expire-days", FIXED_EXPIRE_DAYS);
         config.addDefault("gui.refresh-cooldown-millis", 500L);
         config.addDefault("gui.confirmation-gui-enabled", true);
-        config.addDefault("gui.compact-price-format", false);
+        config.addDefault("gui.compact-price-format", true);
         config.addDefault("file-logging", false);
 
         config.addDefault("history.allow-player-own-view", true);
@@ -307,7 +308,7 @@ public final class AuctionSettings {
 
         // Boolean settings
         confirmationGuiEnabled = config.getBoolean("gui.confirmation-gui-enabled", true);
-        compactPriceFormatEnabled = config.getBoolean("gui.compact-price-format", false);
+        compactPriceFormatEnabled = config.getBoolean("gui.compact-price-format", true);
         fileLoggingEnabled = config.getBoolean("file-logging", false);
         allowPlayerOwnHistoryView = config.getBoolean("history.allow-player-own-view", true);
 
